@@ -13,9 +13,8 @@ export default class EnvironmentLinkSetup extends DefaultTheme {
 
     constructor(renderer: Renderer, basePath) {
         super(renderer, basePath);
+        
         Handlebars.registerHelper('getConfigData', this.getConfigData);
-        // MarkedPlugin.ini
-        // Handlebars.registerHelper('relativeUrl', url ? ctxAwareRender.getRelativeUrl(url) : url);
     }
 
     private getConfigData(prop: string, lang) {

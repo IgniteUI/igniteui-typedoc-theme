@@ -1,4 +1,4 @@
-const { src, dest} = require('gulp');
+const { src, dest, watch } = require('gulp');
 const series = require('gulp').series;
 const parallel = require('gulp').parallel;
 const del = require('del');
@@ -26,18 +26,18 @@ const TYPEDOC_THEME = {
     }
 };
 
-function typedocCopyImages() {
+const typedocCopyImages = () => {
   return src(slash(path.join(TYPEDOC_THEME.SRC, 'assets', 'images/**/*.{png,gif,jpg,svg}')))
     .pipe(dest(slash(path.join(TYPEDOC_THEME.DIST, 'assets', 'images'))));
-}
-typedocCleanImages.displayName = 'typedoc:copy-images';
+};
+typedocCopyImages.displayName = 'typedoc:copy-images';
 
-async function typedocCleanImages() {
+const typedocCleanImages = async () => {
   return await del(slash(path.join(TYPEDOC_THEME.DIST, 'assets', 'images')), { force: true });
-}
-typedocCopyImages.displayName = 'typedoc:clean-images';
+};
+typedocCleanImages.displayName = 'typedoc:clean-images';
 
-function typedocCopyHbs() {
+const typedocCopyHBS = () => {
   return src([
     slash(path.join(TYPEDOC_THEME.SRC, 'layouts/**/*')),
     slash(path.join(TYPEDOC_THEME.SRC, 'partials/**/*')),
@@ -46,19 +46,19 @@ function typedocCopyHbs() {
     base: TYPEDOC_THEME.SRC
   })
   .pipe(dest(TYPEDOC_THEME.DIST));
-}
-typedocCopyHbs.displayName = 'typedoc:copy-hbs';
+};
+typedocCopyHBS.displayName = 'typedoc:copy-hbs';
 
-async function typedocCleanHbs() {
+const typedocCleanHBS = async () => {
   return await del([
     slash(path.join(TYPEDOC_THEME.DIST, 'layouts')),
     slash(path.join(TYPEDOC_THEME.DIST, 'partials')),
     slash(path.join(TYPEDOC_THEME.DIST, 'templates')),
   ], { force: true });
-}
-typedocCleanHbs.displayName = 'typedoc:clean-hbs';
+};
+typedocCleanHBS.displayName = 'typedoc:clean-hbs';
 
-function typedocCopyStyles() {
+const typedocCopyStyles = () => {
   const prefixer = postcss([autoprefixer({
     overrideBrowserslist: ['last 5 versions', '> 3%'],
     cascade: false,
@@ -71,15 +71,15 @@ function typedocCopyStyles() {
     .pipe(prefixer)
     .pipe(sourcemaps.write(TYPEDOC_THEME.STYLES.MAPS))
     .pipe(dest(slash(path.join(TYPEDOC_THEME.DIST, TYPEDOC_THEME.STYLES.OUT))));
-}
+};
 typedocCopyStyles.displayName = 'typedoc:copy-styles';
 
-async function typedocCleanStyles() {
+const typedocCleanStyles = async () => {
   return await del(slash(path.join(TYPEDOC_THEME.DIST, 'assets', 'css')), { force: true });
-}
+};
 typedocCleanStyles.displayName = 'typedoc:clean-styles';
 
-function typedocMinifyJS() {
+const typedocMinifyJS = () => {
   return src([
     slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'lib', 'query-2.1.1.min.js')),
     slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'lib', 'nderscore-1.6.0.min.js')),
@@ -93,25 +93,26 @@ function typedocMinifyJS() {
   ], { allowEmpty: true })
   .pipe(concat('main.js'))
   .pipe(dest(slash(path.join(TYPEDOC_THEME.DIST, 'assets', 'js'))));
-}
+};
 typedocMinifyJS.displayName = 'typedoc:minify-js';
 
-async function typedocCleanThemeJS() {
+const typedocCleanThemeJS = async() => {
   return await del(slash(path.join(TYPEDOC_THEME.DIST, 'theme.js')), { force: true });
-}
+};
 typedocCleanThemeJS.displayName = 'typedoc:clean-theme-js';
 
-async function typedocCleanJS() {
+const typedocCleanJS = async () => {
   return await del(slash(path.join(TYPEDOC_THEME.DIST, 'assets', 'js')), { force: true });
-}
+};
 typedocCleanJS.displayName = 'typedoc:clean-js';
 
-async function typedocBuildTS() {
-  return await shell.task('tsc --project ./typedoc/tsconfig.json');
-}
+const typedocBuildTS = async () => {
+  const buildTs = shell.task('tsc --project ./typedoc/tsconfig.json');
+  return await buildTs();
+};
 typedocBuildTS.displayName = 'typedoc:build-ts';
 
-function typedocBuildThemeTS() {
+const typedocBuildThemeTS = () => {
   return src(
     slash(path.join(TYPEDOC_THEME.SRC, 'assets', 'js', 'src', 'theme.ts'))
   )
@@ -121,20 +122,37 @@ function typedocBuildThemeTS() {
     module: 'commonjs'
   }))
   .pipe(dest(TYPEDOC_THEME.DIST));
-}
+};
 typedocBuildThemeTS.displayName = 'typedoc:build-theme-ts';
 
-function typedocCopyConfig() {
+const typedocCopyConfig = () => {
   const themePath = slash(path.join(__dirname, 'config.json'));
   return src(themePath)
     .pipe(dest(TYPEDOC_THEME.DIST));
-}
+};
 typedocCopyConfig.displayName = 'typedoc:copy-config';
 
-async function typedocCleanConfig() {
-  return await del(slash(`${TYPEDOC_THEME.DIST}\\config.json`), {force: true});
-} 
+const typedocCleanConfig = async () => {
+  return await del(slash(path.join(TYPEDOC_THEME.DIST, 'config.json')), { force: true });
+};
 typedocCleanConfig.dispalyName = 'typedoc:clean-config';
+
+/**
+ * Allows watching globals and running a task whan a chage occurs.
+ * @param {Function} cb done callback 
+ * @param {Function} callabck task function or componsed task executing after every reflected change.
+ */
+const typedocWatch = (cb, callabck) => {
+  watch([
+    slash(path.join(TYPEDOC_THEME.SRC, 'assets', 'js', 'src', '/**/*.{ts,js}')),
+    slash(path.join(TYPEDOC_THEME.SRC, 'assets', 'css', '/**/*.{scss,sass}')),
+    slash(path.join(TYPEDOC_THEME.SRC, '/**/*.hbs')),
+    slash(path.join(TYPEDOC_THEME.SRC, 'assets', 'images', '/**/*.{png,jpg,gif}')),
+  ], callabck);
+
+  cb();
+};
+typedocWatch.dispalyName = 'typedoc:watch';
 
 module.exports.typedocBuild = parallel(
   series(typedocCleanImages, typedocCopyImages),
@@ -146,13 +164,9 @@ module.exports.typedocBuild = parallel(
     typedocBuildTS, 
     typedocMinifyJS),
     
-  series(typedocCleanHbs, typedocCopyHbs),
+  series(typedocCleanHBS, typedocCopyHBS),
   series(typedocCleanConfig, typedocCopyConfig),
-  // typedocBuildThemeTS
-  // typedocCleanImages,
-  // typedocCleanConfig,
-  // typedocCleanHbs,
-  // series(typedocCleanThemeJS, typedocCleanJS),
-  // typedocCleanStyles,
-  // typedocCleanThemeJS
+  typedocBuildThemeTS
 );
+
+module.exports.typedocWatch = series(typedocWatch);

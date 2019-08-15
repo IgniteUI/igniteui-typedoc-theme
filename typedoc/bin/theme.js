@@ -10,8 +10,6 @@ class EnvironmentLinkSetup extends typedoc_1.DefaultTheme {
     constructor(renderer, basePath) {
         super(renderer, basePath);
         Handlebars.registerHelper('getConfigData', this.getConfigData);
-        // MarkedPlugin.ini
-        // Handlebars.registerHelper('relativeUrl', url ? ctxAwareRender.getRelativeUrl(url) : url);
     }
     getConfigData(prop, lang) {
         const fileName = 'config.json';
