@@ -107,7 +107,7 @@ const typedocCleanJS = async () => {
 typedocCleanJS.displayName = 'typedoc:clean-js';
 
 const typedocBuildTS = async () => {
-  const buildTs = shell.task('tsc --project ./typedoc/tsconfig.json');
+  const buildTs = shell.task(`tsc --project ${path.join(__dirname, 'typedoc', 'tsconfig.json')}`);
   return await buildTs();
 };
 typedocBuildTS.displayName = 'typedoc:build-ts';
@@ -142,7 +142,7 @@ typedocCleanConfig.dispalyName = 'typedoc:clean-config';
  * @param {Function} cb done callback 
  * @param {Function} callabck task function or componsed task executing after every reflected change.
  */
-const typedocWatch = (cb, callabck) => {
+module.exports.typedocWatch = (cb, callabck) => {
   watch([
     slash(path.join(TYPEDOC_THEME.SRC, 'assets', 'js', 'src', '/**/*.{ts,js}')),
     slash(path.join(TYPEDOC_THEME.SRC, 'assets', 'css', '/**/*.{scss,sass}')),
@@ -152,7 +152,6 @@ const typedocWatch = (cb, callabck) => {
 
   cb();
 };
-typedocWatch.dispalyName = 'typedoc:watch';
 
 module.exports.typedocBuild = parallel(
   series(typedocCleanImages, typedocCopyImages),
@@ -168,5 +167,3 @@ module.exports.typedocBuild = parallel(
   series(typedocCleanConfig, typedocCopyConfig),
   typedocBuildThemeTS
 );
-
-module.exports.typedocWatch = series(typedocWatch);
