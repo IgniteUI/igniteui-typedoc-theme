@@ -1,6 +1,5 @@
-const { src, dest, watch } = require('gulp');
-const series = require('gulp').series;
-const parallel = require('gulp').parallel;
+const { src, dest, parallel } = require('gulp');
+const { series } = require('gulp');
 const del = require('del');
 const path = require('path');
 const slash = require('slash');
@@ -137,22 +136,6 @@ const typedocCleanConfig = async () => {
 };
 typedocCleanConfig.dispalyName = 'typedoc:clean-config';
 
-/**
- * Allows watching globals and running a task whan a chage occurs.
- * @param {Function} cb done callback 
- * @param {Function} callabck task function or componsed task executing after every reflected change.
- */
-module.exports.typedocWatch = (cb, callabck) => {
-  watch([
-    slash(path.join(TYPEDOC_THEME.SRC, 'assets', 'js', 'src', '/**/*.{ts,js}')),
-    slash(path.join(TYPEDOC_THEME.SRC, 'assets', 'css', '/**/*.{scss,sass}')),
-    slash(path.join(TYPEDOC_THEME.SRC, '/**/*.hbs')),
-    slash(path.join(TYPEDOC_THEME.SRC, 'assets', 'images', '/**/*.{png,jpg,gif}')),
-  ], callabck);
-
-  cb();
-};
-
 module.exports.typedocBuild = parallel(
   series(typedocCleanImages, typedocCopyImages),
   series(typedocCleanStyles, typedocCopyStyles),
@@ -163,7 +146,7 @@ module.exports.typedocBuild = parallel(
     typedocBuildTS, 
     typedocMinifyJS),
     
-  series(typedocCleanHBS, typedocCopyHBS),
-  series(typedocCleanConfig, typedocCopyConfig),
-  typedocBuildThemeTS
+    series(typedocCleanHBS, typedocCopyHBS),
+    series(typedocCleanConfig, typedocCopyConfig),
+    typedocBuildThemeTS
 );
