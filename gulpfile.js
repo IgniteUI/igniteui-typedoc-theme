@@ -78,20 +78,22 @@ const typedocCleanStyles = async () => {
 };
 typedocCleanStyles.displayName = 'typedoc:clean-styles';
 
-const typedocMinifyJS = () => {
-  return src([
-    slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'lib', 'query-2.1.1.min.js')),
-    slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'lib', 'nderscore-1.6.0.min.js')),
-    slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'lib', 'ackbone-1.1.2.min.js')),
-    slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'lib', 'unr.min.js')),
-    slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'src', 'avigation/igviewer.common.js')),
-    slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'src', 'avigation/igviewer.renderingService.js')),
-    slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'src', 'avigation/nav-initializer.js')),
-    slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'src', 'ersioning/tag-versions.req.js')),
+const typedocMinifyJS = (cb) => {
+  src([
+    slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'lib', 'jquery-2.1.1.min.js')),
+    slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'lib', 'underscore-1.6.0.min.js')),
+    slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'lib', 'backbone-1.1.2.min.js')),
+    slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'lib', 'lunr.min.js')),
+    slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'src', 'navigation/igviewer.common.js')),
+    slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'src', 'navigation/igviewer.renderingService.js')),
+    slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'src', 'navigation/nav-initializer.js')),
+    slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'src', 'versioning/tag-versions.req.js')),
     slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'main.js'))
-  ], { allowEmpty: true })
+  ])
   .pipe(concat('main.js'))
   .pipe(dest(slash(path.join(TYPEDOC_THEME.DIST, 'assets', 'js'))));
+  
+  cb();
 };
 typedocMinifyJS.displayName = 'typedoc:minify-js';
 
