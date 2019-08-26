@@ -2,6 +2,8 @@
   "name": "igniteui-typedoc-theme",
   "version": "1.0.0",
   "description": "custom theme for typdoc API documentation",
+  "author": "Infragistics",
+  "license": "MIT",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "gulp typedocBuild",
@@ -13,8 +15,10 @@
     "api",
     "custom"
   ],
-  "author": "Infragistics",
-  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/IgniteUI/igniteui-typedoc-theme"
+  },
   "devDependencies": {
     "autoprefixer": "^9.6.1",
     "browser-sync": "^2.26.7",
