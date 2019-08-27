@@ -5,7 +5,11 @@
   "author": "Infragistics",
   "license": "MIT",
   "files": [
-    "dist/"
+    "dist/",
+    "src/",
+    "config.json",
+    "tsconfig.json",
+    "gulpfile.js"
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
