@@ -14,7 +14,7 @@ const shell = require('gulp-shell');
 
 const TYPEDOC_THEME = {
     SRC: slash(path.join(__dirname, 'src')),
-    DIST: slash(path.join(__dirname, 'bin')),
+    DIST: slash(path.join(__dirname, 'dist')),
     STYLES: {
         ENTRY: slash(path.join('assets', 'css', 'main.sass')),
         OUT: slash(path.join('assets','css')),
@@ -150,5 +150,6 @@ module.exports.typedocBuild = parallel(
     
     series(typedocCleanHBS, typedocCopyHBS),
     series(typedocCleanConfig, typedocCopyConfig),
-    typedocBuildThemeTS
+    typedocBuildThemeTS,
+
 );
