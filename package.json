@@ -4,6 +4,9 @@
   "description": "custom theme for typdoc API documentation",
   "author": "Infragistics",
   "license": "MIT",
+  "files": [
+    "dist/"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "gulp typedocBuild",
