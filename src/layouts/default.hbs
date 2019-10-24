@@ -55,7 +55,7 @@
             <div id="tsd-search" class="tsd-search" data-index="{{relativeURL "assets/js/search.js"}}" data-base="{{relativeURL "./"}}">
                 <div class="field">
                     <label for="tsd-search-field" class="material-icons">search</label>
-                    <input id="tsd-search-field" type="text" placeholder="Search API..."/>
+                    <input id="tsd-search-field" type="text" placeholder="{{#localize}}Search API{{/localize}}" />
                 </div>
 
                 <ul class="results">
@@ -67,25 +67,25 @@
             <div id="tsd-filter">
                 <div class="tsd-filter-group">
                     <div class="tsd-select" id="tsd-filter-visibility">
-                        <span class="tsd-select-label">All</span>
+                        <span class="tsd-select-label">{{#localize}}All{{/localize}}</span>
                         <ul class="tsd-select-list">
-                            <li data-value="public">Public</li>
-                            <li data-value="protected">Public/Protected</li>
-                            <li data-value="private" class="selected">All</li>
+                            <li data-value="public">{{#localize}}Public{{/localize}}</li>
+                            <li data-value="protected">{{#localize}}Public/Protected{{/localize}}</li>
+                            <li data-value="private" class="selected">{{#localize}}All{{/localize}}</li>
                         </ul>
                     </div>
 
                     <input type="checkbox" id="tsd-filter-inherited" checked />
-                    <label class="tsd-widget" for="tsd-filter-inherited">Inherited</label>
+                    <label class="tsd-widget" for="tsd-filter-inherited">{{#localize}}Inherited{{/localize}}</label>
 
                     {{#unless settings.excludeExternals}}
                         <input type="checkbox" id="tsd-filter-externals" checked />
-                        <label class="tsd-widget" for="tsd-filter-externals">Externals</label>
+                        <label class="tsd-widget" for="tsd-filter-externals">{{#localize}}Externals{{/localize}}</label>
                     {{/unless}}
 
                     {{#unless settings.excludeNotExported}}
                         <input type="checkbox" id="tsd-filter-only-exported" />
-                        <label class="tsd-widget" for="tsd-filter-only-exported">Only exported</label>
+                        <label class="tsd-widget" for="tsd-filter-only-exported">{{#localize}}Only exported{{/localize}}</label>
                     {{/unless}}
                 </div>
             </div>
