@@ -5,11 +5,7 @@
   "author": "Infragistics",
   "license": "MIT",
   "files": [
-    "dist/",
-    "src/",
-    "config.json",
-    "tsconfig.json",
-    "gulpfile.js"
+    "dist/"
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -37,9 +33,14 @@
     "gulp-shell": "^0.7.1",
     "gulp-sourcemaps": "^2.6.5",
     "gulp-typescript": "^5.0.1",
-    "handlebars": "^4.1.2",
+    "handlebars": "^4.7.2",
     "slash": "^3.0.0",
-    "typedoc": "^0.15.0",
-    "typescript": "^3.5.3"
+    "typedoc": "^0.16.9",
+    "typescript": "^3.7.5"
+  },
+  "dependencies": {
+    "typedoc": "^0.16.9",
+    "typescript": "^3.7.5",
+    "handlebars": "^4.7.2"
   }
 }

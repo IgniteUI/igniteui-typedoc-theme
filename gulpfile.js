@@ -97,8 +97,25 @@ const typedocMinifyJS = (cb) => {
 };
 typedocMinifyJS.displayName = 'typedoc:minify-js';
 
+const buildHelpers = () => {
+  return src([
+    slash(path.join(TYPEDOC_THEME.SRC, 'helpers', 'getConfigData.ts'))
+  ])
+  .pipe(ts({
+    target: 'es2017',
+    moduleResolution: 'node',
+    module: 'commonjs',
+  }))
+  .pipe(dest(path.join(TYPEDOC_THEME.DIST, 'helpers')));
+}
+
 const typedocCleanThemeJS = async() => {
   return await del(slash(path.join(TYPEDOC_THEME.DIST, 'theme.js')), { force: true });
+};
+typedocCleanThemeJS.displayName = 'typedoc:clean-theme-js';
+
+const typedocCleanHelpers = async() => {
+  return await del(slash(path.join(TYPEDOC_THEME.DIST, 'helpers')), { force: true });
 };
 typedocCleanThemeJS.displayName = 'typedoc:clean-theme-js';
 
@@ -143,10 +160,11 @@ module.exports.typedocBuild = parallel(
   series(typedocCleanStyles, typedocCopyStyles),
   
   series(
-    series(typedocCleanJS, typedocCleanThemeJS),
+    series(typedocCleanJS, typedocCleanThemeJS, typedocCleanHelpers),
     typedocBuildThemeTS,
     typedocBuildTS, 
-    typedocMinifyJS),
+    typedocMinifyJS,
+    buildHelpers),
     
     series(typedocCleanHBS, typedocCopyHBS),
     series(typedocCleanConfig, typedocCopyConfig),
