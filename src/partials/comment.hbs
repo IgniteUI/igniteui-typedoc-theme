@@ -12,8 +12,10 @@
             {{#if tags}}
                 <dl class="tsd-comment-tags">
                     {{#each tags}}
-                        <dt>{{tagName}}</dt>
+                      <div>
+                        <dt>@{{tagName}}</dt>
                         <dd>{{#markdown}}{{{text}}}{{/markdown}}</dd>
+                      </div>
                     {{/each}}
                 </dl>
             {{/if}}
