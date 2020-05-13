@@ -6,7 +6,7 @@
     <title>{{#ifCond model.name '==' project.name}}{{project.name}}{{else}}{{model.name}} | {{project.name}}{{/ifCond}}</title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
+    
     {{#ifCond settings.localize '===' 'en'}}
         <link rel="canonical" href="{{getConfigData 'typedoc_default_url' 'en'}}{{url}}" />
     {{else}}
@@ -19,7 +19,7 @@
     <link rel="alternate" href="{{getConfigData 'typedoc_default_url' 'en'}}{{url}}" hreflang="x-default" />
 
     <link rel="stylesheet" href="https://infragistics.com/assets/modern/css/layout.css">
-<link rel="stylesheet" href="https://infragistics.com/assets/modern/css/animate-custom.css">
+    <link rel="stylesheet" href="https://infragistics.com/assets/modern/css/animate-custom.css">
     <link rel="stylesheet" href="https://infragistics.com/assets/modern/css/fontello.css">
     <link rel="stylesheet" href="{{getConfigData 'url' 'en'}}/css/navigation.css">
     <link rel="stylesheet" href="https://infragistics.com/css/footer.css">
@@ -35,7 +35,7 @@
         'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
         })(window,document,'script','dataLayer', "{{getConfigData 'gaID'}}");
     </script>
-    <!-- End Google Tag Manager -->
+        <!-- End Google Tag Manager -->
 </head>
 <body id="body" data-base-url="{{getConfigData "url"}}" data-api-versions-json="{{getConfigData "versions"}}">
 
