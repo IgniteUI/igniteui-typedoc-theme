@@ -17,11 +17,9 @@ export function getConfigData(prop: string, lang) {
       config = JSON.parse(fs.readFileSync(normalizedPath, 'utf8'));
   }
 
-  let getLang;
-  if (settings) {
-      getLang = lang.name ? settings.localize : lang;
-  }
-
+  const settingOpt = settings.localize === undefined ? 'en' : settings.localize;
+  const getLang = lang.name ? settingOpt : lang;
+  
   if (config && getLang && process.env.NODE_ENV) {
       data = config[getLang][process.env.NODE_ENV.trim()];
   }
