@@ -1,6 +1,7 @@
-# igniteui-typedoc-theme
+# ig-typedoc-theme
 ![Build Status](https://travis-ci.org/IgniteUI/igniteui-typedoc-theme.svg?branch=master)
 
-This is a package which serves the theme shell used for documentation generation of [Ignite UI for Angular.](https://github.com/IgniteUI/igniteui-angular). It also provides the look, feel and functionality of all other Infragistic's websites along with Global navigation and footer containers. 
+The package represents the feel and look of the infragistics API typedoc documentations.
+There are a specific global header and footer declarations that could be easily edited based on user's preferences.
 
 The end results produce [this web app](https://www.infragistics.com/products/ignite-ui-angular/docs/typescript/latest/)
