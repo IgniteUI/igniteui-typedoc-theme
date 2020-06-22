@@ -1,4 +1,4 @@
-# ig-typedoc-theme
+# igc-typedoc-theme
 ![Build Status](https://travis-ci.org/IgniteUI/igniteui-typedoc-theme.svg?branch=master)
 
 The package represents the feel and look of the infragistics API typedoc documentations.
