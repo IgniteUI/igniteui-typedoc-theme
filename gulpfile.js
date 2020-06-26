@@ -86,8 +86,6 @@ const typedocMinifyJS = (cb) => {
     slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'lib', 'lunr.min.js')),
     slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'src', 'navigation/igviewer.common.js')),
     slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'src', 'navigation/igviewer.renderingService.js')),
-    slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'src', 'navigation/nav-initializer.js')),
-    slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'src', 'versioning/tag-versions.req.js')),
     slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'main.js'))
   ])
   .pipe(concat('main.js'))
@@ -96,28 +94,6 @@ const typedocMinifyJS = (cb) => {
   cb();
 };
 typedocMinifyJS.displayName = 'typedoc:minify-js';
-
-const buildHelpers = () => {
-  return src([
-    slash(path.join(TYPEDOC_THEME.SRC, 'helpers', 'getConfigData.ts'))
-  ])
-  .pipe(ts({
-    target: 'es2017',
-    moduleResolution: 'node',
-    module: 'commonjs',
-  }))
-  .pipe(dest(path.join(TYPEDOC_THEME.DIST, 'helpers')));
-}
-
-const typedocCleanThemeJS = async() => {
-  return await del(slash(path.join(TYPEDOC_THEME.DIST, 'theme.js')), { force: true });
-};
-typedocCleanThemeJS.displayName = 'typedoc:clean-theme-js';
-
-const typedocCleanHelpers = async() => {
-  return await del(slash(path.join(TYPEDOC_THEME.DIST, 'helpers')), { force: true });
-};
-typedocCleanThemeJS.displayName = 'typedoc:clean-theme-js';
 
 const typedocCleanJS = async () => {
   return await del(slash(path.join(TYPEDOC_THEME.DIST, 'assets', 'js')), { force: true });
@@ -130,44 +106,14 @@ const typedocBuildTS = async () => {
 };
 typedocBuildTS.displayName = 'typedoc:build-ts';
 
-const typedocBuildThemeTS = () => {
-  return src(
-    slash(path.join(TYPEDOC_THEME.SRC, 'assets', 'js', 'src', 'theme.ts'))
-  )
-  .pipe(ts({
-    target: 'es2017',
-    moduleResolution: 'node',
-    module: 'commonjs'
-  }))
-  .pipe(dest(TYPEDOC_THEME.DIST));
-};
-typedocBuildThemeTS.displayName = 'typedoc:build-theme-ts';
-
-const typedocCopyConfig = () => {
-  const themePath = slash(path.join(__dirname, 'config.json'));
-  return src(themePath)
-    .pipe(dest(TYPEDOC_THEME.DIST));
-};
-typedocCopyConfig.displayName = 'typedoc:copy-config';
-
-const typedocCleanConfig = async () => {
-  return await del(slash(path.join(TYPEDOC_THEME.DIST, 'config.json')), { force: true });
-};
-typedocCleanConfig.dispalyName = 'typedoc:clean-config';
-
 module.exports.typedocBuild = parallel(
   series(typedocCleanImages, typedocCopyImages),
   series(typedocCleanStyles, typedocCopyStyles),
   
   series(
-    series(typedocCleanJS, typedocCleanThemeJS, typedocCleanHelpers),
-    typedocBuildThemeTS,
+    typedocCleanJS,
     typedocBuildTS, 
-    typedocMinifyJS,
-    buildHelpers),
-    
-    series(typedocCleanHBS, typedocCopyHBS),
-    series(typedocCleanConfig, typedocCopyConfig),
-    typedocBuildThemeTS,
-
+    typedocMinifyJS),
+     
+  series(typedocCleanHBS, typedocCopyHBS),
 );

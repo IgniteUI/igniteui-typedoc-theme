@@ -1,16 +1,9 @@
 <header class="tsd-header">
-    {{#ifCond project.localization '==' 'jp'}}{{> infranav.ja }}{{else}}{{> infranav }}{{/ifCond}}
+    {{> infranav }}
     <div class="tsd-header-content">
         <div class="tsd-header-group">
             <h1 class="tsd-header-logo">
-                {{#ifCond project.localization '==' 'jp'}}
-                    <a href="https://jp.infragistics.com/products/ignite-ui-angular" class="title">{{project.name}}</a>
-                {{else}}
-                    <a href="https://www.infragistics.com/products/ignite-ui-angular" class="title">{{project.name}}</a>
-                {{/ifCond}}
-                <span class="version">
-                    <select id="versions"></select>
-                </span>
+              <a href="https://www.infragistics.com/products/ignite-ui-angular" class="title">{{project.name}}</a>  
             </h1>
             <div class="tsd-nav-toggle">
                 <input id="tsd-toggle-cbx" type="checkbox">
@@ -20,20 +13,12 @@
                 <ul class="tsd-nav">
                     <li class="tsd-nav-item">
                         <button class="tsd-button--flat">
-                            {{#ifCond project.localization '==' 'jp' }}
-                                <a href="https://jp.infragistics.com/products/ignite-ui-angular">{{#localize}}Components{{/localize}}</a>
-                            {{else}}
-                                <a href="https://www.infragistics.com/products/ignite-ui-angular">{{#localize}}Components{{/localize}}</a>
-                            {{/ifCond}}
+                          <a href="https://www.infragistics.com/products/ignite-ui-angular">Components</a>
                         </button>
                     </li>
                     <li class="tsd-nav-item">
                         <button class="tsd-button">
-                            {{#ifCond project.localization '==' 'jp'}}
-                                <a href="https://jp.infragistics.com/products/ignite-ui-angular/getting-started/">{{#localize}}Get Started{{/localize}}</a>
-                            {{else}}
-                                <a href="https://infragistics.com/products/ignite-ui-angular/getting-started/">{{#localize}}Get Started{{/localize}}</a>
-                            {{/ifCond}}
+                          <a href="https://infragistics.com/products/ignite-ui-angular/getting-started/">Get Started</a>
                         </button>
                     </li>
                 </ul>
