@@ -6,6 +6,7 @@
         "sourceMap": false,
         "declaration": true,
         "removeComments": true,
+        "allowJs": true,
         "outFile": "src/assets/js/main.js"
     },
     "include": [

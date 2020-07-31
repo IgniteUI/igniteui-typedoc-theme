@@ -13,12 +13,8 @@ var __extends = (this && this.__extends) || (function () {
 })();
 var typedoc;
 (function (typedoc) {
-    typedoc.$html = $('html');
     var services = [];
     var components = [];
-    typedoc.$document = $(document);
-    typedoc.$window = $(window);
-    typedoc.$body = $('body');
     function registerService(constructor, name, priority) {
         if (priority === void 0) { priority = 0; }
         services.push({
@@ -42,53 +38,90 @@ var typedoc;
         components.sort(function (a, b) { return a.priority - b.priority; });
     }
     typedoc.registerComponent = registerComponent;
-    if (typeof Backbone != 'undefined') {
-        typedoc['Events'] = (function () {
-            var res = function () { };
-            _.extend(res.prototype, Backbone.Events);
-            return res;
-        })();
-    }
-    var Application = (function (_super) {
-        __extends(Application, _super);
+    var Application = (function () {
         function Application() {
-            var _this = _super.call(this) || this;
-            _this.createServices();
-            _this.createComponents(typedoc.$body);
-            return _this;
+            this.createServices();
+            this.createComponents(document.body);
         }
         Application.prototype.createServices = function () {
-            _(services).forEach(function (c) {
+            services.forEach(function (c) {
                 c.instance = new c.constructor();
                 typedoc[c.name] = c.instance;
             });
         };
-        Application.prototype.createComponents = function ($context, namespace) {
+        Application.prototype.createComponents = function (context, namespace) {
             if (namespace === void 0) { namespace = 'default'; }
-            var result = [];
-            _(components).forEach(function (c) {
+            components.forEach(function (c) {
                 if (c.namespace != namespace && c.namespace != '*') {
                     return;
                 }
-                $context.find(c.selector).each(function (m, el) {
-                    var $el = $(el), instance;
-                    if (instance = $el.data('component')) {
-                        if (_(result).indexOf(instance) == -1) {
-                            result.push(instance);
-                        }
-                    }
-                    else {
-                        instance = new c.constructor({ el: el });
-                        $el.data('component', instance);
-                        result.push(instance);
+                context.querySelectorAll(c.selector).forEach(function (el) {
+                    if (!el.dataset.hasInstance) {
+                        new c.constructor({ el: el });
+                        el.dataset.hasInstance = String(true);
                     }
                 });
             });
-            return result;
         };
         return Application;
-    }(typedoc.Events));
+    }());
     typedoc.Application = Application;
+})(typedoc || (typedoc = {}));
+var typedoc;
+(function (typedoc) {
+    var Component = (function () {
+        function Component(options) {
+            this.el = options.el;
+        }
+        return Component;
+    }());
+    typedoc.Component = Component;
+})(typedoc || (typedoc = {}));
+var typedoc;
+(function (typedoc) {
+    typedoc.pointerDown = 'mousedown';
+    typedoc.pointerMove = 'mousemove';
+    typedoc.pointerUp = 'mouseup';
+    typedoc.pointerDownPosition = { x: 0, y: 0 };
+    typedoc.preventNextClick = false;
+    typedoc.isPointerDown = false;
+    typedoc.isPointerTouch = false;
+    typedoc.hasPointerMoved = false;
+    typedoc.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    document.documentElement.classList.add(typedoc.isMobile ? 'is-mobile' : 'not-mobile');
+    if (typedoc.isMobile && 'ontouchstart' in document.documentElement) {
+        typedoc.isPointerTouch = true;
+        typedoc.pointerDown = 'touchstart';
+        typedoc.pointerMove = 'touchmove';
+        typedoc.pointerUp = 'touchend';
+    }
+    document.addEventListener(typedoc.pointerDown, function (e) {
+        typedoc.isPointerDown = true;
+        typedoc.hasPointerMoved = false;
+        var t = (typedoc.pointerDown == 'touchstart' ? e.targetTouches[0] : e);
+        typedoc.pointerDownPosition.y = t.pageY || 0;
+        typedoc.pointerDownPosition.x = t.pageX || 0;
+    });
+    document.addEventListener(typedoc.pointerMove, function (e) {
+        if (!typedoc.isPointerDown)
+            return;
+        if (!typedoc.hasPointerMoved) {
+            var t = (typedoc.pointerDown == 'touchstart' ? e.targetTouches[0] : e);
+            var x = typedoc.pointerDownPosition.x - (t.pageX || 0);
+            var y = typedoc.pointerDownPosition.y - (t.pageY || 0);
+            typedoc.hasPointerMoved = (Math.sqrt(x * x + y * y) > 10);
+        }
+    });
+    document.addEventListener(typedoc.pointerUp, function () {
+        typedoc.isPointerDown = false;
+    });
+    document.addEventListener('click', function (e) {
+        if (typedoc.preventNextClick) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            typedoc.preventNextClick = false;
+        }
+    });
 })(typedoc || (typedoc = {}));
 var typedoc;
 (function (typedoc) {
@@ -103,13 +136,6 @@ var typedoc;
             }
         }
         FilterItem.prototype.initialize = function () { };
-        FilterItem.prototype.handleValueChange = function (oldValue, newValue) { };
-        FilterItem.prototype.fromLocalStorage = function (value) {
-            return value;
-        };
-        FilterItem.prototype.toLocalStorage = function (value) {
-            return value;
-        };
         FilterItem.prototype.setValue = function (value) {
             if (this.value == value)
                 return;
@@ -127,14 +153,19 @@ var typedoc;
         }
         FilterItemCheckbox.prototype.initialize = function () {
             var _this = this;
-            this.$checkbox = $('#tsd-filter-' + this.key);
-            this.$checkbox.on('change', function () {
-                _this.setValue(_this.$checkbox.prop('checked'));
+            var checkbox = document.querySelector('#tsd-filter-' + this.key);
+            if (!checkbox)
+                return;
+            this.checkbox = checkbox;
+            this.checkbox.addEventListener('change', function () {
+                _this.setValue(_this.checkbox.checked);
             });
         };
         FilterItemCheckbox.prototype.handleValueChange = function (oldValue, newValue) {
-            this.$checkbox.prop('checked', this.value);
-            typedoc.$html.toggleClass('toggle-' + this.key, this.value != this.defaultValue);
+            if (!this.checkbox)
+                return;
+            this.checkbox.checked = this.value;
+            document.documentElement.classList.toggle('toggle-' + this.key, this.value != this.defaultValue);
         };
         FilterItemCheckbox.prototype.fromLocalStorage = function (value) {
             return value == 'true';
@@ -151,28 +182,50 @@ var typedoc;
         }
         FilterItemSelect.prototype.initialize = function () {
             var _this = this;
-            typedoc.$html.addClass('toggle-' + this.key + this.value);
-            this.$select = $('#tsd-filter-' + this.key);
-            this.$select.on(typedoc.pointerDown + ' mouseover', function () {
-                _this.$select.addClass('active');
-            }).on('mouseleave', function () {
-                _this.$select.removeClass('active');
-            }).on(typedoc.pointerUp, 'li', function (e) {
-                _this.$select.removeClass('active');
-                _this.setValue($(e.target).attr('data-value'));
+            document.documentElement.classList.add('toggle-' + this.key + this.value);
+            var select = document.querySelector('#tsd-filter-' + this.key);
+            if (!select)
+                return;
+            this.select = select;
+            var onActivate = function () {
+                _this.select.classList.add('active');
+            };
+            var onDeactivate = function () {
+                _this.select.classList.remove('active');
+            };
+            this.select.addEventListener(typedoc.pointerDown, onActivate);
+            this.select.addEventListener('mouseover', onActivate);
+            this.select.addEventListener('mouseleave', onDeactivate);
+            this.select.querySelectorAll('li').forEach(function (el) {
+                el.addEventListener(typedoc.pointerUp, function (e) {
+                    select.classList.remove('active');
+                    _this.setValue(e.target.dataset.value || '');
+                });
             });
-            typedoc.$document.on(typedoc.pointerDown, function (e) {
-                var $path = $(e.target).parents().addBack();
-                if ($path.is(_this.$select))
+            document.addEventListener(typedoc.pointerDown, function (e) {
+                if (_this.select.contains(e.target))
                     return;
-                _this.$select.removeClass('active');
+                _this.select.classList.remove('active');
             });
         };
         FilterItemSelect.prototype.handleValueChange = function (oldValue, newValue) {
-            this.$select.find('li.selected').removeClass('selected');
-            this.$select.find('.tsd-select-label').text(this.$select.find('li[data-value="' + newValue + '"]').addClass('selected').text());
-            typedoc.$html.removeClass('toggle-' + oldValue);
-            typedoc.$html.addClass('toggle-' + newValue);
+            this.select.querySelectorAll('li.selected').forEach(function (el) {
+                el.classList.remove('selected');
+            });
+            var selected = this.select.querySelector('li[data-value="' + newValue + '"]');
+            var label = this.select.querySelector('.tsd-select-label');
+            if (selected && label) {
+                selected.classList.add('selected');
+                label.textContent = selected.textContent;
+            }
+            document.documentElement.classList.remove('toggle-' + oldValue);
+            document.documentElement.classList.add('toggle-' + newValue);
+        };
+        FilterItemSelect.prototype.fromLocalStorage = function (value) {
+            return value;
+        };
+        FilterItemSelect.prototype.toLocalStorage = function (value) {
+            return value;
         };
         return FilterItemSelect;
     }(FilterItem));
@@ -195,13 +248,134 @@ var typedoc;
             }
         };
         return Filter;
-    }(Backbone.View));
+    }(typedoc.Component));
     if (Filter.isSupported()) {
         typedoc.registerComponent(Filter, '#tsd-filter');
     }
     else {
-        typedoc.$html.addClass('no-filter');
+        document.documentElement.classList.add('no-filter');
     }
+})(typedoc || (typedoc = {}));
+var typedoc;
+(function (typedoc) {
+    var EventTarget = (function () {
+        function EventTarget() {
+            this.listeners = {};
+        }
+        EventTarget.prototype.addEventListener = function (type, callback) {
+            if (!(type in this.listeners)) {
+                this.listeners[type] = [];
+            }
+            this.listeners[type].push(callback);
+        };
+        ;
+        EventTarget.prototype.removeEventListener = function (type, callback) {
+            if (!(type in this.listeners)) {
+                return;
+            }
+            var stack = this.listeners[type];
+            for (var i = 0, l = stack.length; i < l; i++) {
+                if (stack[i] === callback) {
+                    stack.splice(i, 1);
+                    return;
+                }
+            }
+        };
+        ;
+        EventTarget.prototype.dispatchEvent = function (event) {
+            if (!(event.type in this.listeners)) {
+                return true;
+            }
+            var stack = this.listeners[event.type].slice();
+            for (var i = 0, l = stack.length; i < l; i++) {
+                stack[i].call(this, event);
+            }
+            return !event.defaultPrevented;
+        };
+        ;
+        return EventTarget;
+    }());
+    typedoc.EventTarget = EventTarget;
+})(typedoc || (typedoc = {}));
+var typedoc;
+(function (typedoc) {
+    typedoc.throttle = function (fn, wait) {
+        if (wait === void 0) { wait = 100; }
+        var time = Date.now();
+        return function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i] = arguments[_i];
+            }
+            if ((time + wait - Date.now()) < 0) {
+                fn.apply(void 0, args);
+                time = Date.now();
+            }
+        };
+    };
+})(typedoc || (typedoc = {}));
+var typedoc;
+(function (typedoc) {
+    var Viewport = (function (_super) {
+        __extends(Viewport, _super);
+        function Viewport() {
+            var _this = _super.call(this) || this;
+            _this.scrollTop = 0;
+            _this.lastY = 0;
+            _this.width = 0;
+            _this.height = 0;
+            _this.showToolbar = true;
+            _this.toolbar = document.querySelector('.tsd-page-toolbar');
+            _this.secondaryNav = document.querySelector('.tsd-navigation.secondary');
+            window.addEventListener('scroll', typedoc.throttle(function () { return _this.onScroll(); }, 10));
+            window.addEventListener('resize', typedoc.throttle(function () { return _this.onResize(); }, 10));
+            _this.onResize();
+            _this.onScroll();
+            return _this;
+        }
+        Viewport.prototype.triggerResize = function () {
+            var event = new CustomEvent('resize', {
+                detail: {
+                    width: this.width,
+                    height: this.height,
+                }
+            });
+            this.dispatchEvent(event);
+        };
+        Viewport.prototype.onResize = function () {
+            this.width = window.innerWidth || 0;
+            this.height = window.innerHeight || 0;
+            var event = new CustomEvent('resize', {
+                detail: {
+                    width: this.width,
+                    height: this.height,
+                }
+            });
+            this.dispatchEvent(event);
+        };
+        Viewport.prototype.onScroll = function () {
+            this.scrollTop = window.scrollY || 0;
+            var event = new CustomEvent('scroll', {
+                detail: {
+                    scrollTop: this.scrollTop,
+                }
+            });
+            this.dispatchEvent(event);
+            this.hideShowToolbar();
+        };
+        Viewport.prototype.hideShowToolbar = function () {
+            var isShown = this.showToolbar;
+            this.showToolbar = this.lastY >= this.scrollTop || this.scrollTop === 0;
+            if (isShown !== this.showToolbar) {
+                this.toolbar.classList.toggle('tsd-page-toolbar--hide');
+                this.secondaryNav.classList.toggle('tsd-navigation--toolbar-hide');
+            }
+            this.lastY = this.scrollTop;
+        };
+        return Viewport;
+    }(typedoc.EventTarget));
+    typedoc.Viewport = Viewport;
+    typedoc.registerService(Viewport, 'viewport');
 })(typedoc || (typedoc = {}));
 var typedoc;
 (function (typedoc) {
@@ -209,35 +383,33 @@ var typedoc;
         __extends(MenuHighlight, _super);
         function MenuHighlight(options) {
             var _this = _super.call(this, options) || this;
-            _this.index = 0;
-            _this.listenTo(typedoc.viewport, 'resize', _this.onResize);
-            _this.listenTo(typedoc.viewport, 'scroll', _this.onScroll);
+            _this.anchors = [];
+            _this.index = -1;
+            typedoc.viewport.addEventListener('resize', function () { return _this.onResize(); });
+            typedoc.viewport.addEventListener('scroll', function (e) { return _this.onScroll(e); });
             _this.createAnchors();
             return _this;
         }
         MenuHighlight.prototype.createAnchors = function () {
             var _this = this;
-            this.index = 0;
-            this.anchors = [{
-                    position: 0
-                }];
             var base = window.location.href;
             if (base.indexOf('#') != -1) {
                 base = base.substr(0, base.indexOf('#'));
             }
-            this.$el.find('a').each(function (index, el) {
+            this.el.querySelectorAll('a').forEach(function (el) {
                 var href = el.href;
                 if (href.indexOf('#') == -1)
                     return;
                 if (href.substr(0, base.length) != base)
                     return;
                 var hash = href.substr(href.indexOf('#') + 1);
-                var $anchor = $('a.tsd-anchor[name=' + hash + ']');
-                if ($anchor.length == 0)
+                var anchor = document.querySelector('a.tsd-anchor[name=' + hash + ']');
+                var link = el.parentNode;
+                if (!anchor || !link)
                     return;
                 _this.anchors.push({
-                    $link: $(el.parentNode),
-                    $anchor: $anchor,
+                    link: link,
+                    anchor: anchor,
                     position: 0
                 });
             });
@@ -245,137 +417,44 @@ var typedoc;
         };
         MenuHighlight.prototype.onResize = function () {
             var anchor;
-            for (var index = 1, count = this.anchors.length; index < count; index++) {
+            for (var index = 0, count = this.anchors.length; index < count; index++) {
                 anchor = this.anchors[index];
-                anchor.position = anchor.$anchor.offset().top;
+                var rect = anchor.anchor.getBoundingClientRect();
+                anchor.position = rect.top + document.body.scrollTop;
             }
             this.anchors.sort(function (a, b) {
                 return a.position - b.position;
             });
-            this.onScroll(typedoc.viewport.scrollTop);
+            var event = new CustomEvent('scroll', {
+                detail: {
+                    scrollTop: typedoc.viewport.scrollTop,
+                }
+            });
+            this.onScroll(event);
         };
-        MenuHighlight.prototype.onScroll = function (scrollTop) {
+        MenuHighlight.prototype.onScroll = function (event) {
+            var scrollTop = event.detail.scrollTop + 5;
             var anchors = this.anchors;
-            var index = this.index;
             var count = anchors.length - 1;
-            scrollTop += 5;
-            while (index > 0 && anchors[index].position > scrollTop) {
+            var index = this.index;
+            while (index > -1 && anchors[index].position > scrollTop) {
                 index -= 1;
             }
             while (index < count && anchors[index + 1].position < scrollTop) {
                 index += 1;
             }
             if (this.index != index) {
-                if (this.index > 0)
-                    this.anchors[this.index].$link.removeClass('focus');
+                if (this.index > -1)
+                    this.anchors[this.index].link.classList.remove('focus');
                 this.index = index;
-                if (this.index > 0)
-                    this.anchors[this.index].$link.addClass('focus');
+                if (this.index > -1)
+                    this.anchors[this.index].link.classList.add('focus');
             }
         };
         return MenuHighlight;
-    }(Backbone.View));
+    }(typedoc.Component));
     typedoc.MenuHighlight = MenuHighlight;
     typedoc.registerComponent(MenuHighlight, '.menu-highlight');
-})(typedoc || (typedoc = {}));
-var typedoc;
-(function (typedoc) {
-    var hasPositionSticky = typedoc.$html.hasClass('csspositionsticky');
-    var StickyMode;
-    (function (StickyMode) {
-        StickyMode[StickyMode["None"] = 0] = "None";
-        StickyMode[StickyMode["Secondary"] = 1] = "Secondary";
-        StickyMode[StickyMode["Current"] = 2] = "Current";
-    })(StickyMode || (StickyMode = {}));
-    var MenuSticky = (function (_super) {
-        __extends(MenuSticky, _super);
-        function MenuSticky(options) {
-            var _this = _super.call(this, options) || this;
-            _this.state = '';
-            _this.stickyMode = StickyMode.None;
-            _this.$current = _this.$el.find('> ul.current');
-            _this.$navigation = _this.$el.parents('.menu-sticky-wrap');
-            _this.$container = _this.$el.parents('.row');
-            _this.listenTo(typedoc.viewport, 'resize', _this.onResize);
-            if (!hasPositionSticky) {
-                _this.listenTo(typedoc.viewport, 'scroll', _this.onScroll);
-            }
-            _this.onResize(typedoc.viewport.width, typedoc.viewport.height);
-            return _this;
-        }
-        MenuSticky.prototype.setState = function (state) {
-            if (this.state == state)
-                return;
-            if (this.state != '')
-                this.$navigation.removeClass(this.state);
-            this.state = state;
-            if (this.state != '')
-                this.$navigation.addClass(this.state);
-        };
-        MenuSticky.prototype.onResize = function (width, height) {
-            this.stickyMode = StickyMode.None;
-            this.setState('');
-            var containerTop = this.$container.offset().top;
-            var containerHeight = this.$container.height();
-            var bottom = containerTop + containerHeight;
-            if (this.$navigation.height() < containerHeight) {
-                var elHeight = this.$el.height();
-                var elTop = this.$el.offset().top;
-                if (this.$current.length) {
-                    var currentHeight = this.$current.height();
-                    var currentTop = this.$current.offset().top;
-                    this.$navigation.css('top', containerTop - currentTop + 20);
-                    if (currentHeight < height) {
-                        this.stickyMode = StickyMode.Current;
-                        this.stickyTop = currentTop;
-                        this.stickyBottom = bottom - elHeight + (currentTop - elTop) - 20;
-                    }
-                }
-                if (elHeight < height) {
-                    this.$navigation.css('top', containerTop - elTop + 20);
-                    this.stickyMode = StickyMode.Secondary;
-                    this.stickyTop = elTop;
-                    this.stickyBottom = bottom - elHeight - 20;
-                }
-            }
-            if (!hasPositionSticky) {
-                this.$navigation.css('left', this.$navigation.offset().left);
-                this.onScroll(typedoc.viewport.scrollTop);
-            }
-            else {
-                if (this.stickyMode == StickyMode.Current) {
-                    this.setState('sticky-current');
-                }
-                else if (this.stickyMode == StickyMode.Secondary) {
-                    this.setState('sticky');
-                }
-                else {
-                    this.setState('');
-                }
-            }
-        };
-        MenuSticky.prototype.onScroll = function (scrollTop) {
-            if (this.stickyMode == StickyMode.Current) {
-                if (scrollTop > this.stickyBottom) {
-                    this.setState('sticky-bottom');
-                }
-                else {
-                    this.setState(scrollTop + 20 > this.stickyTop ? 'sticky-current' : '');
-                }
-            }
-            else if (this.stickyMode == StickyMode.Secondary) {
-                if (scrollTop > this.stickyBottom) {
-                    this.setState('sticky-bottom');
-                }
-                else {
-                    this.setState(scrollTop + 20 > this.stickyTop ? 'sticky' : '');
-                }
-            }
-        };
-        return MenuSticky;
-    }(Backbone.View));
-    typedoc.MenuSticky = MenuSticky;
-    typedoc.registerComponent(MenuSticky, '.menu-sticky');
 })(typedoc || (typedoc = {}));
 var typedoc;
 (function (typedoc) {
@@ -388,175 +467,217 @@ var typedoc;
             SearchLoadingState[SearchLoadingState["Ready"] = 2] = "Ready";
             SearchLoadingState[SearchLoadingState["Failure"] = 3] = "Failure";
         })(SearchLoadingState || (SearchLoadingState = {}));
-        var $el = $('#tsd-search');
-        var $field = $('#tsd-search-field');
-        var $results = $('.results');
-        var base = $el.attr('data-base') + '/';
-        var query = '';
-        var loadingState = SearchLoadingState.Idle;
-        var hasFocus = false;
-        var preventPress = false;
-        var index;
-        function createIndex() {
-            index = new lunr.Index();
-            index.pipeline.add(lunr.trimmer);
-            index.field('name', { boost: 10 });
-            index.field('parent');
-            index.ref('id');
-            var rows = search.data.rows;
-            var pos = 0;
-            var length = rows.length;
-            function batch() {
-                var cycles = 0;
-                while (cycles++ < 100) {
-                    index.add(rows[pos]);
-                    if (++pos == length) {
-                        return setLoadingState(SearchLoadingState.Ready);
+        var Search = (function (_super) {
+            __extends(Search, _super);
+            function Search(options) {
+                var _this = _super.call(this, options) || this;
+                _this.query = '';
+                _this.loadingState = SearchLoadingState.Idle;
+                _this.hasFocus = false;
+                _this.preventPress = false;
+                _this.data = null;
+                _this.index = null;
+                _this.resultClicked = false;
+                console.log('load search');
+                console.log(options);
+                var field = document.querySelector('#tsd-search-field');
+                var results = document.querySelector('.results');
+                if (!field || !results) {
+                    throw new Error('The input field or the result list wrapper are not found');
+                }
+                _this.field = field;
+                _this.results = results;
+                _this.base = _this.el.dataset.base + '/';
+                _this.bindEvents();
+                return _this;
+            }
+            Search.prototype.loadIndex = function () {
+                var _this = this;
+                console.log('loading index');
+                console.log(this.el.dataset);
+                if (this.loadingState != SearchLoadingState.Idle || this.data)
+                    return;
+                setTimeout(function () {
+                    if (_this.loadingState == SearchLoadingState.Idle) {
+                        _this.setLoadingState(SearchLoadingState.Loading);
+                    }
+                }, 500);
+                var url = this.el.dataset.index;
+                if (!url) {
+                    this.setLoadingState(SearchLoadingState.Failure);
+                    return;
+                }
+                fetch(url)
+                    .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('The search index is missing');
+                    }
+                    return response.json();
+                })
+                    .then(function (source) {
+                    _this.data = source;
+                    _this.index = lunr.Index.load(source.index);
+                    _this.setLoadingState(SearchLoadingState.Ready);
+                })
+                    .catch(function (error) {
+                    console.error(error);
+                    _this.setLoadingState(SearchLoadingState.Failure);
+                });
+            };
+            Search.prototype.updateResults = function () {
+                if (this.loadingState != SearchLoadingState.Ready)
+                    return;
+                this.results.textContent = '';
+                if (!this.query || !this.index || !this.data)
+                    return;
+                var res = this.index.search("*" + this.query + "*");
+                if (res.length === 0) {
+                    res = this.index.search("*" + this.query + "~1*");
+                }
+                for (var i = 0, c = Math.min(10, res.length); i < c; i++) {
+                    var row = this.data.rows[Number(res[i].ref)];
+                    var name = row.name.replace(new RegExp(this.query, 'i'), function (match) { return "<b>" + match + "</b>"; });
+                    var parent = row.parent || '';
+                    parent = parent.replace(new RegExp(this.query, 'i'), function (match) { return "<b>" + match + "</b>"; });
+                    if (parent)
+                        name = '<span class="parent">' + parent + '.</span>' + name;
+                    var item = document.createElement('li');
+                    item.classList.value = row.classes;
+                    item.innerHTML = "\n                    <a href=\"" + (this.base + row.url) + "\" class=\"tsd-kind-icon\">" + name + "</a>\n                ";
+                    this.results.appendChild(item);
+                }
+            };
+            Search.prototype.setLoadingState = function (value) {
+                if (this.loadingState == value)
+                    return;
+                this.el.classList.remove(SearchLoadingState[this.loadingState].toLowerCase());
+                this.loadingState = value;
+                this.el.classList.add(SearchLoadingState[this.loadingState].toLowerCase());
+                this.updateResults();
+            };
+            Search.prototype.setHasFocus = function (value) {
+                if (this.hasFocus == value)
+                    return;
+                this.hasFocus = value;
+                this.el.classList.toggle('has-focus');
+                if (!value) {
+                    this.field.value = this.query;
+                }
+                else {
+                    this.setQuery('');
+                    this.field.value = '';
+                }
+            };
+            Search.prototype.setQuery = function (value) {
+                this.query = value.trim();
+                this.updateResults();
+            };
+            Search.prototype.setCurrentResult = function (dir) {
+                var current = this.results.querySelector('.current');
+                if (!current) {
+                    current = this.results.querySelector(dir == 1 ? 'li:first-child' : 'li:last-child');
+                    if (current) {
+                        current.classList.add('current');
                     }
                 }
-                setTimeout(batch, 10);
-            }
-            batch();
-        }
-        function loadIndex() {
-            if (loadingState != SearchLoadingState.Idle)
-                return;
-            setTimeout(function () {
-                if (loadingState == SearchLoadingState.Idle) {
-                    setLoadingState(SearchLoadingState.Loading);
+                else {
+                    var rel = dir == 1 ? current.nextElementSibling : current.previousElementSibling;
+                    if (rel) {
+                        current.classList.remove('current');
+                        rel.classList.add('current');
+                    }
                 }
-            }, 500);
-            if (typeof search.data != 'undefined') {
-                createIndex();
-            }
-            else {
-                $.get($el.attr('data-index'))
-                    .done(function (source) {
-                    eval(source);
-                    createIndex();
-                }).fail(function () {
-                    setLoadingState(SearchLoadingState.Failure);
+            };
+            Search.prototype.gotoCurrentResult = function () {
+                var current = this.results.querySelector('.current');
+                if (!current) {
+                    current = this.results.querySelector('li:first-child');
+                }
+                if (current) {
+                    var link = current.querySelector('a');
+                    if (link) {
+                        window.location.href = link.href;
+                    }
+                    this.field.blur();
+                }
+            };
+            Search.prototype.bindEvents = function () {
+                var _this = this;
+                this.results.addEventListener('mousedown', function () {
+                    _this.resultClicked = true;
                 });
-            }
-        }
-        function updateResults() {
-            if (loadingState != SearchLoadingState.Ready)
-                return;
-            $results.empty();
-            var res = index.search(query);
-            for (var i = 0, c = Math.min(10, res.length); i < c; i++) {
-                var row = search.data.rows[res[i].ref];
-                var name = row.name;
-                if (row.parent)
-                    name = '<span class="parent">' + row.parent + '.</span>' + name;
-                $results.append('<li class="' + row.classes + '"><a href="' + base + row.url + '" class="tsd-kind-icon">' + name + '</li>');
-            }
-        }
-        function setLoadingState(value) {
-            if (loadingState == value)
-                return;
-            $el.removeClass(SearchLoadingState[loadingState].toLowerCase());
-            loadingState = value;
-            $el.addClass(SearchLoadingState[loadingState].toLowerCase());
-            if (value == SearchLoadingState.Ready) {
-                updateResults();
-            }
-        }
-        function setHasFocus(value) {
-            if (hasFocus == value)
-                return;
-            hasFocus = value;
-            $el.toggleClass('has-focus');
-            if (!value) {
-                $field.val(query);
-            }
-            else {
-                setQuery('');
-                $field.val('');
-            }
-        }
-        function setQuery(value) {
-            query = $.trim(value);
-            updateResults();
-        }
-        function setCurrentResult(dir) {
-            var $current = $results.find('.current');
-            if ($current.length == 0) {
-                $results.find(dir == 1 ? 'li:first-child' : 'li:last-child').addClass('current');
-            }
-            else {
-                var $rel = dir == 1 ? $current.next('li') : $current.prev('li');
-                if ($rel.length > 0) {
-                    $current.removeClass('current');
-                    $rel.addClass('current');
-                }
-            }
-        }
-        function gotoCurrentResult() {
-            var $current = $results.find('.current');
-            if ($current.length == 0) {
-                $current = $results.find('li:first-child');
-            }
-            if ($current.length > 0) {
-                window.location.href = $current.find('a').prop('href');
-                $field.blur();
-            }
-        }
-        $field.on('focusin', function () {
-            setHasFocus(true);
-            loadIndex();
-        }).on('focusout', function () {
-            setTimeout(function () { return setHasFocus(false); }, 100);
-        }).on('input', function () {
-            setQuery($.trim($field.val()));
-        }).on('keydown', function (e) {
-            if (e.keyCode == 13 || e.keyCode == 27 || e.keyCode == 38 || e.keyCode == 40) {
-                preventPress = true;
-                e.preventDefault();
-                if (e.keyCode == 13) {
-                    gotoCurrentResult();
-                }
-                else if (e.keyCode == 27) {
-                    $field.blur();
-                }
-                else if (e.keyCode == 38) {
-                    setCurrentResult(-1);
-                }
-                else if (e.keyCode == 40) {
-                    setCurrentResult(1);
-                }
-            }
-            else {
-                preventPress = false;
-            }
-        }).on('keypress', function (e) {
-            if (preventPress)
-                e.preventDefault();
-        });
-        $('body').on('keydown', function (e) {
-            if (e.altKey || e.ctrlKey || e.metaKey)
-                return;
-            if (!hasFocus && e.keyCode > 47 && e.keyCode < 112) {
-                $field.focus();
-            }
-        });
+                this.results.addEventListener('mouseup', function () {
+                    _this.resultClicked = false;
+                    _this.setHasFocus(false);
+                });
+                this.field.addEventListener('focusin', function () {
+                    _this.setHasFocus(true);
+                    _this.loadIndex();
+                });
+                this.field.addEventListener('focusout', function () {
+                    if (_this.resultClicked) {
+                        _this.resultClicked = false;
+                        return;
+                    }
+                    setTimeout(function () { return _this.setHasFocus(false); }, 100);
+                });
+                this.field.addEventListener('input', function () {
+                    _this.setQuery(_this.field.value);
+                });
+                this.field.addEventListener('keydown', function (e) {
+                    if (e.keyCode == 13 || e.keyCode == 27 || e.keyCode == 38 || e.keyCode == 40) {
+                        _this.preventPress = true;
+                        e.preventDefault();
+                        if (e.keyCode == 13) {
+                            _this.gotoCurrentResult();
+                        }
+                        else if (e.keyCode == 27) {
+                            _this.field.blur();
+                        }
+                        else if (e.keyCode == 38) {
+                            _this.setCurrentResult(-1);
+                        }
+                        else if (e.keyCode == 40) {
+                            _this.setCurrentResult(1);
+                        }
+                    }
+                    else {
+                        _this.preventPress = false;
+                    }
+                });
+                this.field.addEventListener('keypress', function (e) {
+                    if (_this.preventPress)
+                        e.preventDefault();
+                });
+                document.body.addEventListener('keydown', function (e) {
+                    if (e.altKey || e.ctrlKey || e.metaKey)
+                        return;
+                    if (!_this.hasFocus && e.keyCode > 47 && e.keyCode < 112) {
+                        _this.field.focus();
+                    }
+                });
+            };
+            return Search;
+        }(typedoc.Component));
+        search.Search = Search;
+        typedoc.registerComponent(Search, '#tsd-search');
     })(search = typedoc.search || (typedoc.search = {}));
 })(typedoc || (typedoc = {}));
 var typedoc;
 (function (typedoc) {
     var SignatureGroup = (function () {
-        function SignatureGroup($signature, $description) {
-            this.$signature = $signature;
-            this.$description = $description;
+        function SignatureGroup(signature, description) {
+            this.signature = signature;
+            this.description = description;
         }
         SignatureGroup.prototype.addClass = function (className) {
-            this.$signature.addClass(className);
-            this.$description.addClass(className);
+            this.signature.classList.add(className);
+            this.description.classList.add(className);
             return this;
         };
         SignatureGroup.prototype.removeClass = function (className) {
-            this.$signature.removeClass(className);
-            this.$description.removeClass(className);
+            this.signature.classList.remove(className);
+            this.description.classList.remove(className);
             return this;
         };
         return SignatureGroup;
@@ -565,13 +686,16 @@ var typedoc;
         __extends(Signature, _super);
         function Signature(options) {
             var _this = _super.call(this, options) || this;
+            _this.groups = [];
             _this.index = -1;
             _this.createGroups();
-            if (_this.groups) {
-                _this.$el.addClass('active')
-                    .on('touchstart', '.tsd-signature', function (event) { return _this.onClick(event); })
-                    .on('click', '.tsd-signature', function (event) { return _this.onClick(event); });
-                _this.$container.addClass('active');
+            if (_this.container) {
+                _this.el.classList.add('active');
+                Array.from(_this.el.children).forEach(function (signature) {
+                    signature.addEventListener('touchstart', function (event) { return _this.onClick(event); });
+                    signature.addEventListener('click', function (event) { return _this.onClick(event); });
+                });
+                _this.container.classList.add('active');
                 _this.setIndex(0);
             }
             return _this;
@@ -585,14 +709,13 @@ var typedoc;
                 return;
             var to = this.groups[index];
             if (this.index > -1) {
-                var from = this.groups[this.index];
-                typedoc.animateHeight(this.$container, function () {
-                    from.removeClass('current').addClass('fade-out');
-                    to.addClass('current fade-in');
-                    typedoc.viewport.triggerResize();
-                });
+                var from_1 = this.groups[this.index];
+                from_1.removeClass('current').addClass('fade-out');
+                to.addClass('current');
+                to.addClass('fade-in');
+                typedoc.viewport.triggerResize();
                 setTimeout(function () {
-                    from.removeClass('fade-out');
+                    from_1.removeClass('fade-out');
                     to.removeClass('fade-in');
                 }, 300);
             }
@@ -603,28 +726,26 @@ var typedoc;
             this.index = index;
         };
         Signature.prototype.createGroups = function () {
-            var _this = this;
-            var $signatures = this.$el.find('> .tsd-signature');
-            if ($signatures.length < 2)
+            var signatures = this.el.children;
+            if (signatures.length < 2)
                 return;
-            this.$container = this.$el.siblings('.tsd-descriptions');
-            var $descriptions = this.$container.find('> .tsd-description');
+            this.container = this.el.nextElementSibling;
+            var descriptions = this.container.children;
             this.groups = [];
-            $signatures.each(function (index, el) {
-                _this.groups.push(new SignatureGroup($(el), $descriptions.eq(index)));
-            });
+            for (var index = 0; index < signatures.length; index++) {
+                this.groups.push(new SignatureGroup(signatures[index], descriptions[index]));
+            }
         };
         Signature.prototype.onClick = function (e) {
             var _this = this;
-            e.preventDefault();
-            _(this.groups).forEach(function (group, index) {
-                if (group.$signature.is(e.currentTarget)) {
+            this.groups.forEach(function (group, index) {
+                if (group.signature === e.currentTarget) {
                     _this.setIndex(index);
                 }
             });
         };
         return Signature;
-    }(Backbone.View));
+    }(typedoc.Component));
     typedoc.registerComponent(Signature, '.tsd-signatures');
 })(typedoc || (typedoc = {}));
 var typedoc;
@@ -633,22 +754,22 @@ var typedoc;
         __extends(Toggle, _super);
         function Toggle(options) {
             var _this = _super.call(this, options) || this;
-            _this.className = _this.$el.attr('data-toggle');
-            _this.$el.on(typedoc.pointerUp, function (e) { return _this.onPointerUp(e); });
-            _this.$el.on('click', function (e) { return e.preventDefault(); });
-            typedoc.$document.on(typedoc.pointerDown, function (e) { return _this.onDocumentPointerDown(e); });
-            typedoc.$document.on(typedoc.pointerUp, function (e) { return _this.onDocumentPointerUp(e); });
+            _this.className = _this.el.dataset.toggle || '';
+            _this.el.addEventListener(typedoc.pointerUp, function (e) { return _this.onPointerUp(e); });
+            _this.el.addEventListener('click', function (e) { return e.preventDefault(); });
+            document.addEventListener(typedoc.pointerDown, function (e) { return _this.onDocumentPointerDown(e); });
+            document.addEventListener(typedoc.pointerUp, function (e) { return _this.onDocumentPointerUp(e); });
             return _this;
         }
         Toggle.prototype.setActive = function (value) {
             if (this.active == value)
                 return;
             this.active = value;
-            typedoc.$html.toggleClass('has-' + this.className, value);
-            this.$el.toggleClass('active', value);
+            document.documentElement.classList.toggle('has-' + this.className, value);
+            this.el.classList.toggle('active', value);
             var transition = (this.active ? 'to-has-' : 'from-has-') + this.className;
-            typedoc.$html.addClass(transition);
-            setTimeout(function () { return typedoc.$html.removeClass(transition); }, 500);
+            document.documentElement.classList.add(transition);
+            setTimeout(function () { return document.documentElement.classList.remove(transition); }, 500);
         };
         Toggle.prototype.onPointerUp = function (event) {
             if (typedoc.hasPointerMoved)
@@ -658,11 +779,7 @@ var typedoc;
         };
         Toggle.prototype.onDocumentPointerDown = function (e) {
             if (this.active) {
-                var $path = $(e.target).parents().addBack();
-                if ($path.hasClass('col-menu')) {
-                    return;
-                }
-                if ($path.hasClass('tsd-filter-group')) {
+                if (e.target.closest('.col-menu, .tsd-filter-group')) {
                     return;
                 }
                 this.setActive(false);
@@ -673,15 +790,14 @@ var typedoc;
             if (typedoc.hasPointerMoved)
                 return;
             if (this.active) {
-                var $path = $(e.target).parents().addBack();
-                if ($path.hasClass('col-menu')) {
-                    var $link = $path.filter('a');
-                    if ($link.length) {
+                if (e.target.closest('.col-menu')) {
+                    var link = e.target.closest('a');
+                    if (link) {
                         var href = window.location.href;
                         if (href.indexOf('#') != -1) {
                             href = href.substr(0, href.indexOf('#'));
                         }
-                        if ($link.prop('href').substr(0, href.length) == href) {
+                        if (link.href.substr(0, href.length) == href) {
                             setTimeout(function () { return _this.setActive(false); }, 250);
                         }
                     }
@@ -689,135 +805,8 @@ var typedoc;
             }
         };
         return Toggle;
-    }(Backbone.View));
+    }(typedoc.Component));
     typedoc.registerComponent(Toggle, 'a[data-toggle]');
-})(typedoc || (typedoc = {}));
-var typedoc;
-(function (typedoc) {
-    var Viewport = (function (_super) {
-        __extends(Viewport, _super);
-        function Viewport() {
-            var _this = _super.call(this) || this;
-            _this.scrollTop = 0;
-            _this.width = 0;
-            _this.height = 0;
-            typedoc.$window.on('scroll', _(function () { return _this.onScroll(); }).throttle(10));
-            typedoc.$window.on('resize', _(function () { return _this.onResize(); }).throttle(10));
-            _this.onResize();
-            _this.onScroll();
-            return _this;
-        }
-        Viewport.prototype.triggerResize = function () {
-            this.trigger('resize', this.width, this.height);
-        };
-        Viewport.prototype.onResize = function () {
-            this.width = typedoc.$window.width();
-            this.height = typedoc.$window.height();
-            this.trigger('resize', this.width, this.height);
-        };
-        Viewport.prototype.onScroll = function () {
-            this.scrollTop = typedoc.$window.scrollTop();
-            this.trigger('scroll', this.scrollTop);
-        };
-        return Viewport;
-    }(typedoc.Events));
-    typedoc.Viewport = Viewport;
-    typedoc.registerService(Viewport, 'viewport');
-})(typedoc || (typedoc = {}));
-var typedoc;
-(function (typedoc) {
-    typedoc.pointerDown = 'mousedown';
-    typedoc.pointerMove = 'mousemove';
-    typedoc.pointerUp = 'mouseup';
-    typedoc.pointerDownPosition = { x: 0, y: 0 };
-    typedoc.preventNextClick = false;
-    typedoc.isPointerDown = false;
-    typedoc.isPointerTouch = false;
-    typedoc.hasPointerMoved = false;
-    typedoc.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    typedoc.$html.addClass(typedoc.isMobile ? 'is-mobile' : 'not-mobile');
-    if (typedoc.isMobile && 'ontouchstart' in document.documentElement) {
-        typedoc.isPointerTouch = true;
-        typedoc.pointerDown = 'touchstart';
-        typedoc.pointerMove = 'touchmove';
-        typedoc.pointerUp = 'touchend';
-    }
-    typedoc.$document.on(typedoc.pointerDown, function (e) {
-        typedoc.isPointerDown = true;
-        typedoc.hasPointerMoved = false;
-        var t = (typedoc.pointerDown == 'touchstart' ? e.originalEvent['targetTouches'][0] : e);
-        typedoc.pointerDownPosition.x = t.pageX;
-        typedoc.pointerDownPosition.y = t.pageY;
-    }).on(typedoc.pointerMove, function (e) {
-        if (!typedoc.isPointerDown)
-            return;
-        if (!typedoc.hasPointerMoved) {
-            var t = (typedoc.pointerDown == 'touchstart' ? e.originalEvent['targetTouches'][0] : e);
-            var x = typedoc.pointerDownPosition.x - t.pageX;
-            var y = typedoc.pointerDownPosition.y - t.pageY;
-            typedoc.hasPointerMoved = (Math.sqrt(x * x + y * y) > 10);
-        }
-    }).on(typedoc.pointerUp, function (e) {
-        typedoc.isPointerDown = false;
-    }).on('click', function (e) {
-        if (typedoc.preventNextClick) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            typedoc.preventNextClick = false;
-        }
-    });
-})(typedoc || (typedoc = {}));
-var typedoc;
-(function (typedoc) {
-    function getVendorInfo(tuples) {
-        for (var name in tuples) {
-            if (!tuples.hasOwnProperty(name))
-                continue;
-            if (typeof (document.body.style[name]) !== 'undefined') {
-                return { name: name, endEvent: tuples[name] };
-            }
-        }
-        return null;
-    }
-    typedoc.transition = getVendorInfo({
-        'transition': 'transitionend',
-        'OTransition': 'oTransitionEnd',
-        'msTransition': 'msTransitionEnd',
-        'MozTransition': 'transitionend',
-        'WebkitTransition': 'webkitTransitionEnd'
-    });
-    function noTransition($el, callback) {
-        $el.addClass('no-transition');
-        callback();
-        $el.offset();
-        $el.removeClass('no-transition');
-    }
-    typedoc.noTransition = noTransition;
-    function animateHeight($el, callback, success) {
-        var from = $el.height(), to;
-        noTransition($el, function () {
-            callback();
-            $el.css('height', '');
-            to = $el.height();
-            if (from != to && typedoc.transition)
-                $el.css('height', from);
-        });
-        if (from != to && typedoc.transition) {
-            $el.css('height', to);
-            $el.on(typedoc.transition.endEvent, function () {
-                noTransition($el, function () {
-                    $el.off(typedoc.transition.endEvent).css('height', '');
-                    if (success)
-                        success();
-                });
-            });
-        }
-        else {
-            if (success)
-                success();
-        }
-    }
-    typedoc.animateHeight = animateHeight;
 })(typedoc || (typedoc = {}));
 var typedoc;
 (function (typedoc) {

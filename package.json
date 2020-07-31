@@ -39,6 +39,7 @@
     "typescript": "^3.9.5"
   },
   "dependencies": {
+    "@types/lunr": "^2.3.3",
     "handlebars": "^4.7.6",
     "typedoc": "^0.17.7",
     "typescript": "^3.9.5"

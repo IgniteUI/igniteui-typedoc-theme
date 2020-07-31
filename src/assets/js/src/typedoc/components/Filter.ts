@@ -1,14 +1,19 @@
-module typedoc {
-    class FilterItem<T>
+/// <reference path='../Application.ts' />
+/// <reference path='../Component.ts' />
+/// <reference path='../utils/pointer.ts' />
+
+namespace typedoc
+{
+    abstract class FilterItem<T>
     {
-        protected key: string;
+        protected key:string;
 
-        protected value: T;
+        protected value:T;
 
-        protected defaultValue: T;
+        protected defaultValue:T;
 
 
-        constructor(key: string, value: T) {
+        constructor(key:string, value:T) {
             this.key = key;
             this.value = value;
             this.defaultValue = value;
@@ -21,23 +26,17 @@ module typedoc {
         }
 
 
-        protected initialize() { }
+        protected initialize() {}
 
 
-        protected handleValueChange(oldValue: T, newValue: T) { }
+        protected abstract handleValueChange(oldValue:T, newValue:T): void;
+
+        protected abstract fromLocalStorage(value: string): T;
+
+        protected abstract toLocalStorage(value: T): string;
 
 
-        protected fromLocalStorage(value: string): T {
-            return <any>value;
-        }
-
-
-        protected toLocalStorage(value: T): string {
-            return <any>value;
-        }
-
-
-        protected setValue(value: T) {
+        protected setValue(value:T) {
             if (this.value == value) return;
 
             var oldValue = this.value;
@@ -51,29 +50,33 @@ module typedoc {
 
     class FilterItemCheckbox extends FilterItem<boolean>
     {
-        private $checkbox: JQuery;
+        private checkbox!:HTMLInputElement;
 
 
         protected initialize() {
-            this.$checkbox = $('#tsd-filter-' + this.key);
-            this.$checkbox.on('change', () => {
-                this.setValue(this.$checkbox.prop('checked'));
+            const checkbox = document.querySelector<HTMLInputElement>('#tsd-filter-' + this.key);
+            if (!checkbox) return;
+
+            this.checkbox = checkbox;
+            this.checkbox.addEventListener('change', () => {
+                this.setValue(this.checkbox.checked);
             });
         }
 
 
-        protected handleValueChange(oldValue: boolean, newValue: boolean) {
-            this.$checkbox.prop('checked', this.value);
-            $html.toggleClass('toggle-' + this.key, this.value != this.defaultValue);
+        protected handleValueChange(oldValue:boolean, newValue:boolean) {
+            if (!this.checkbox) return;
+            this.checkbox.checked = this.value;
+            document.documentElement.classList.toggle('toggle-' + this.key, this.value != this.defaultValue);
         }
 
 
-        protected fromLocalStorage(value: string): boolean {
+        protected fromLocalStorage(value:string):boolean {
             return value == 'true';
         }
 
 
-        protected toLocalStorage(value: boolean): string {
+        protected toLocalStorage(value:boolean):string {
             return value ? 'true' : 'false';
         }
     }
@@ -81,64 +84,91 @@ module typedoc {
 
     class FilterItemSelect extends FilterItem<string>
     {
-        private $select: JQuery;
+        private select!:HTMLElement;
 
 
         protected initialize() {
-            $html.addClass('toggle-' + this.key + this.value);
+            document.documentElement.classList.add('toggle-' + this.key + this.value);
 
-            this.$select = $('#tsd-filter-' + this.key);
-            this.$select.on(pointerDown + ' mouseover', () => {
-                this.$select.addClass('active');
-            }).on('mouseleave', () => {
-                this.$select.removeClass('active');
-            }).on(pointerUp, 'li', (e: JQueryMouseEventObject) => {
-                this.$select.removeClass('active');
-                this.setValue($(e.target).attr('data-value'));
+            const select = document.querySelector<HTMLElement>('#tsd-filter-' + this.key);
+            if (!select) return;
+
+            this.select = select;
+            const onActivate = () => {
+                this.select.classList.add('active');
+            };
+            const onDeactivate = () => {
+                this.select.classList.remove('active');
+            };
+
+            this.select.addEventListener(pointerDown, onActivate);
+            this.select.addEventListener('mouseover', onActivate);
+            this.select.addEventListener('mouseleave', onDeactivate);
+
+            this.select.querySelectorAll('li').forEach(el => {
+                el.addEventListener(pointerUp, (e) => {
+                    select.classList.remove('active');
+                    this.setValue((e.target as HTMLElement).dataset.value || '');
+                })
             });
 
-            $document.on(pointerDown, (e: JQueryMouseEventObject) => {
-                var $path = $(e.target).parents().addBack();
-                if ($path.is(this.$select)) return;
+            document.addEventListener(pointerDown, (e) => {
+                if (this.select.contains(e.target as HTMLElement)) return;
 
-                this.$select.removeClass('active');
+                this.select.classList.remove('active');
             });
         }
 
 
-        protected handleValueChange(oldValue: string, newValue: string) {
-            this.$select.find('li.selected').removeClass('selected');
-            this.$select.find('.tsd-select-label').text(
-                this.$select.find('li[data-value="' + newValue + '"]').addClass('selected').text());
+        protected handleValueChange(oldValue:string, newValue:string) {
+            this.select.querySelectorAll('li.selected').forEach(el => {
+                el.classList.remove('selected')
+            });
 
-            $html.removeClass('toggle-' + oldValue);
-            $html.addClass('toggle-' + newValue);
+            const selected = this.select.querySelector<HTMLElement>('li[data-value="' + newValue + '"]');
+            const label = this.select.querySelector<HTMLElement>('.tsd-select-label');
+
+            if (selected && label) {
+                selected.classList.add('selected');
+                label.textContent = selected.textContent;
+            }
+
+            document.documentElement.classList.remove('toggle-' + oldValue);
+            document.documentElement.classList.add('toggle-' + newValue);
+        }
+
+        protected fromLocalStorage(value: string): string {
+            return value;
+        }
+
+        protected toLocalStorage(value: string): string {
+            return value;
         }
     }
 
 
-    class Filter extends Backbone.View<any>
+    class Filter extends Component
     {
-        private optionVisibility: FilterItemSelect;
+        private optionVisibility:FilterItemSelect;
 
-        private optionInherited: FilterItemCheckbox;
+        private optionInherited:FilterItemCheckbox;
 
-        private optionOnlyExported: FilterItemCheckbox;
+        private optionOnlyExported:FilterItemCheckbox;
 
-        private optionExternals: FilterItemCheckbox;
+        private optionExternals:FilterItemCheckbox;
 
 
-        constructor(options?: Backbone.ViewOptions<any>) {
+        constructor(options:IComponentOptions) {
             super(options);
 
-            this.optionVisibility = new FilterItemSelect('visibility', 'private');
-            this.optionInherited = new FilterItemCheckbox('inherited', true);
-            this.optionExternals = new FilterItemCheckbox('externals', true);
+            this.optionVisibility   = new FilterItemSelect('visibility',      'private');
+            this.optionInherited    = new FilterItemCheckbox('inherited',     true);
+            this.optionExternals    = new FilterItemCheckbox('externals',     true);
             this.optionOnlyExported = new FilterItemCheckbox('only-exported', false);
         }
 
 
-        static isSupported(): boolean {
+        static isSupported():boolean {
             try {
                 return typeof window.localStorage != 'undefined';
             } catch (e) {
@@ -151,6 +181,6 @@ module typedoc {
     if (Filter.isSupported()) {
         registerComponent(Filter, '#tsd-filter');
     } else {
-        $html.addClass('no-filter');
+        document.documentElement.classList.add('no-filter');
     }
 }

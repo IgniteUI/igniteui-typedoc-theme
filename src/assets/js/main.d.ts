@@ -1,9 +1,4 @@
-declare module typedoc {
-    class Events extends Backbone.Events {
-    }
-}
-declare module typedoc {
-    var $html: JQuery;
+declare namespace typedoc {
     interface IService {
         constructor: any;
         name: string;
@@ -16,80 +11,24 @@ declare module typedoc {
         priority: number;
         namespace: string;
     }
-    var $document: JQuery;
-    var $window: JQuery;
-    var $body: JQuery;
     function registerService(constructor: any, name: string, priority?: number): void;
     function registerComponent(constructor: any, selector: string, priority?: number, namespace?: string): void;
-    class Application extends Events {
+    class Application {
         constructor();
         private createServices;
-        createComponents($context: JQuery, namespace?: string): Backbone.View<any>[];
+        createComponents(context: HTMLElement, namespace?: string): void;
     }
 }
-declare module typedoc {
-}
-declare module typedoc {
-    class MenuHighlight extends Backbone.View<any> {
-        private anchors;
-        private index;
-        constructor(options: Backbone.ViewOptions<any>);
-        private createAnchors;
-        private onResize;
-        private onScroll;
+declare namespace typedoc {
+    interface IComponentOptions {
+        el: HTMLElement;
+    }
+    class Component {
+        protected el: HTMLElement;
+        constructor(options: IComponentOptions);
     }
 }
-declare module typedoc {
-    class MenuSticky extends Backbone.View<any> {
-        private $current;
-        private $navigation;
-        private $container;
-        private state;
-        private stickyMode;
-        private stickyTop;
-        private stickyBottom;
-        constructor(options: Backbone.ViewOptions<any>);
-        private setState;
-        private onResize;
-        private onScroll;
-    }
-}
-declare module typedoc.search {
-    interface IDocument {
-        id: number;
-        kind: number;
-        name: string;
-        url: string;
-        classes: string;
-        parent?: string;
-    }
-    interface IData {
-        kinds: {
-            [kind: number]: string;
-        };
-        rows: IDocument[];
-    }
-    var data: IData;
-}
-declare module typedoc.search {
-}
-declare module typedoc {
-}
-declare module typedoc {
-}
-declare module typedoc {
-    class Viewport extends Events {
-        scrollTop: number;
-        width: number;
-        height: number;
-        constructor();
-        triggerResize(): void;
-        onResize(): void;
-        onScroll(): void;
-    }
-    var viewport: Viewport;
-}
-declare module typedoc {
+declare namespace typedoc {
     interface Point {
         x: number;
         y: number;
@@ -104,14 +43,76 @@ declare module typedoc {
     var hasPointerMoved: boolean;
     var isMobile: boolean;
 }
-declare module typedoc {
-    var transition: {
-        name: string;
-        endEvent: any;
-    };
-    function noTransition($el: any, callback: any): void;
-    function animateHeight($el: JQuery, callback: Function, success?: Function): void;
+declare namespace typedoc {
 }
-declare module typedoc {
+declare namespace typedoc {
+    interface IEventListener<T> {
+        (evt: CustomEvent<T>): void;
+    }
+    class EventTarget {
+        private listeners;
+        addEventListener<T>(type: string, callback: IEventListener<T>): void;
+        removeEventListener<T>(type: string, callback: IEventListener<T>): void;
+        dispatchEvent<T>(event: CustomEvent<T>): boolean;
+    }
+}
+declare namespace typedoc {
+    const throttle: <A extends any[]>(fn: (...args: A) => void, wait?: number) => (...args: A) => void;
+}
+declare namespace typedoc {
+    class Viewport extends EventTarget {
+        scrollTop: number;
+        lastY: number;
+        width: number;
+        height: number;
+        toolbar: HTMLDivElement;
+        showToolbar: boolean;
+        secondaryNav: HTMLElement;
+        constructor();
+        triggerResize(): void;
+        onResize(): void;
+        onScroll(): void;
+        hideShowToolbar(): void;
+    }
+    var viewport: Viewport;
+}
+declare namespace typedoc {
+    class MenuHighlight extends Component {
+        private anchors;
+        private index;
+        constructor(options: IComponentOptions);
+        private createAnchors;
+        private onResize;
+        private onScroll;
+    }
+}
+declare namespace typedoc.search {
+    class Search extends Component {
+        private field;
+        private results;
+        private base;
+        private query;
+        private loadingState;
+        private hasFocus;
+        private preventPress;
+        private data;
+        private index;
+        private resultClicked;
+        constructor(options: IComponentOptions);
+        private loadIndex;
+        private updateResults;
+        private setLoadingState;
+        private setHasFocus;
+        private setQuery;
+        private setCurrentResult;
+        private gotoCurrentResult;
+        private bindEvents;
+    }
+}
+declare namespace typedoc {
+}
+declare namespace typedoc {
+}
+declare namespace typedoc {
     var app: Application;
 }

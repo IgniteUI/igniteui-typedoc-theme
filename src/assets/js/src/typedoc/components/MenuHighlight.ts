@@ -1,4 +1,8 @@
-module typedoc
+/// <reference path='../Application.ts' />
+/// <reference path='../Component.ts' />
+/// <reference path='../services/Viewport.ts' />
+
+namespace typedoc
 {
     /**
      * Stored element and position data of a single anchor.
@@ -6,19 +10,19 @@ module typedoc
     interface IAnchorInfo
     {
         /**
-         * jQuery instance of the anchor tag.
+         * The anchor element.
          */
-        $anchor?:JQuery;
+        anchor: HTMLElement;
 
         /**
-         * jQuery instance of the link in the navigation representing this anchor.
+         * The link element in the navigation representing this anchor.
          */
-        $link?:JQuery;
+        link: HTMLElement;
 
         /**
          * The vertical offset of the anchor on the page.
          */
-        position:number;
+        position: number;
     }
 
 
@@ -26,17 +30,17 @@ module typedoc
      * Manages the sticky state of the navigation and moves the highlight
      * to the current navigation item.
      */
-    export class MenuHighlight extends Backbone.View<any>
+    export class MenuHighlight extends Component
     {
         /**
          * List of all discovered anchors.
          */
-        private anchors:IAnchorInfo[];
+        private anchors:IAnchorInfo[] = [];
 
         /**
          * Index of the currently highlighted anchor.
          */
-        private index:number = 0;
+        private index:number = -1;
 
 
         /**
@@ -44,11 +48,11 @@ module typedoc
          *
          * @param options  Backbone view constructor options.
          */
-        constructor(options:Backbone.ViewOptions<any>) {
+        constructor(options:IComponentOptions) {
             super(options);
 
-            this.listenTo(viewport, 'resize', this.onResize);
-            this.listenTo(viewport, 'scroll', this.onScroll);
+            viewport.addEventListener('resize', () => this.onResize());
+            viewport.addEventListener<{ scrollTop:number }>('scroll', e => this.onScroll(e));
 
             this.createAnchors();
         }
@@ -58,28 +62,24 @@ module typedoc
          * Find all anchors on the current page.
          */
         private createAnchors() {
-            this.index = 0;
-            this.anchors = [{
-                position: 0
-            }];
-
             var base = window.location.href;
             if (base.indexOf('#') != -1) {
                 base = base.substr(0, base.indexOf('#'));
             }
 
-            this.$el.find('a').each((index, el:HTMLAnchorElement) => {
+            this.el.querySelectorAll('a').forEach(el => {
                 var href = el.href;
                 if (href.indexOf('#') == -1) return;
                 if (href.substr(0, base.length) != base) return;
 
                 var hash = href.substr(href.indexOf('#') + 1);
-                var $anchor = $('a.tsd-anchor[name=' + hash + ']');
-                if ($anchor.length == 0) return;
+                var anchor = document.querySelector<HTMLElement>('a.tsd-anchor[name=' + hash + ']');
+                var link = el.parentNode;
+                if (!anchor || !link) return;
 
                 this.anchors.push({
-                    $link:    $(el.parentNode),
-                    $anchor:  $anchor,
+                    link:    link as HTMLElement,
+                    anchor:  anchor,
                     position: 0
                 });
             });
@@ -92,32 +92,38 @@ module typedoc
          * Triggered after the viewport was resized.
          */
         private onResize() {
-            var anchor;
-            for (var index = 1, count = this.anchors.length; index < count; index++) {
+            var anchor: IAnchorInfo;
+            for (var index = 0, count = this.anchors.length; index < count; index++) {
                 anchor = this.anchors[index];
-                anchor.position = anchor.$anchor.offset().top;
+                const rect = anchor.anchor.getBoundingClientRect();
+                anchor.position = rect.top + document.body.scrollTop;
             }
 
             this.anchors.sort((a, b) => {
                 return a.position - b.position;
             });
 
-            this.onScroll(viewport.scrollTop);
+            const event = new CustomEvent('scroll', {
+                detail: {
+                    scrollTop: viewport.scrollTop,
+                }
+            });
+            this.onScroll(event);
         }
 
 
         /**
          * Triggered after the viewport was scrolled.
          *
-         * @param scrollTop  The current vertical scroll position.
+         * @param event  The custom event with the current vertical scroll position.
          */
-        private onScroll(scrollTop:number) {
-            var anchors  = this.anchors;
-            var index    = this.index;
-            var count    = anchors.length - 1;
+        private onScroll(event: CustomEvent<{ scrollTop:number }>) {
+            const scrollTop = event.detail.scrollTop + 5;
+            const anchors   = this.anchors;
+            const count     = anchors.length - 1;
+            let index       = this.index;
 
-            scrollTop += 5;
-            while (index > 0 && anchors[index].position > scrollTop) {
+            while (index > -1 && anchors[index].position > scrollTop) {
                 index -= 1;
             }
 
@@ -126,9 +132,9 @@ module typedoc
             }
 
             if (this.index != index) {
-                if (this.index > 0) this.anchors[this.index].$link.removeClass('focus');
+                if (this.index > -1) this.anchors[this.index].link.classList.remove('focus');
                 this.index = index;
-                if (this.index > 0) this.anchors[this.index].$link.addClass('focus');
+                if (this.index > -1) this.anchors[this.index].link.classList.add('focus');
             }
         }
     }

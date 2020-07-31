@@ -1,4 +1,8 @@
-module typedoc
+/// <reference path='../Application.ts' />
+/// <reference path='../Component.ts' />
+/// <reference path='../services/Viewport.ts' />
+
+namespace typedoc
 {
     /**
      * Holds a signature and its description.
@@ -8,23 +12,23 @@ module typedoc
         /**
          * The target signature.
          */
-        $signature:JQuery;
+        signature: Element;
 
         /**
          * The description for the signature.
          */
-        $description:JQuery;
+        description: Element;
 
 
         /**
          * Create a new SignatureGroup instance.
          *
-         * @param $signature    The target signature.
-         * @param $description  The description for the signature.
+         * @param signature    The target signature.
+         * @param description  The description for the signature.
          */
-        constructor($signature, $description) {
-            this.$signature   = $signature;
-            this.$description = $description;
+        constructor(signature: Element, description: Element) {
+            this.signature   = signature;
+            this.description = description;
         }
 
 
@@ -34,8 +38,8 @@ module typedoc
          * @param className  The class name to add.
          */
         addClass(className:string):SignatureGroup {
-            this.$signature.addClass(className);
-            this.$description.addClass(className);
+            this.signature.classList.add(className);
+            this.description.classList.add(className);
             return this;
         }
 
@@ -46,8 +50,8 @@ module typedoc
          * @param className  The class name to remove.
          */
         removeClass(className:string):SignatureGroup {
-            this.$signature.removeClass(className);
-            this.$description.removeClass(className);
+            this.signature.classList.remove(className);
+            this.description.classList.remove(className);
             return this;
         }
     }
@@ -56,17 +60,17 @@ module typedoc
     /**
      * Controls the tab like behaviour of methods and functions with multiple signatures.
      */
-    class Signature extends Backbone.View<any>
+    class Signature extends Component
     {
         /**
          * List of found signature groups.
          */
-        private groups:SignatureGroup[];
+        private groups: SignatureGroup[] = [];
 
         /**
          * The container holding all the descriptions.
          */
-        private $container:JQuery;
+        private container?: HTMLElement;
 
         /**
          * The index of the currently displayed signature.
@@ -79,16 +83,18 @@ module typedoc
          *
          * @param options  Backbone view constructor options.
          */
-        constructor(options:Backbone.ViewOptions<any>) {
+        constructor(options:IComponentOptions) {
             super(options);
 
             this.createGroups();
 
-            if (this.groups) {
-                this.$el.addClass('active')
-                    .on('touchstart', '.tsd-signature', (event) => this.onClick(event))
-                    .on('click', '.tsd-signature', (event) => this.onClick(event));
-                this.$container.addClass('active');
+            if (this.container) {
+                this.el.classList.add('active');
+                Array.from(this.el.children).forEach(signature => {
+                    signature.addEventListener('touchstart', (event) => this.onClick(event));
+                    signature.addEventListener('click', (event) => this.onClick(event));
+                });
+                this.container.classList.add('active');
                 this.setIndex(0);
             }
         }
@@ -104,15 +110,14 @@ module typedoc
             if (index > this.groups.length - 1) index = this.groups.length - 1;
             if (this.index == index) return;
 
-            var to = this.groups[index];
+            const to = this.groups[index];
             if (this.index > -1) {
-                var from = this.groups[this.index];
+                const from = this.groups[this.index];
 
-                animateHeight(this.$container, () => {
-                    from.removeClass('current').addClass('fade-out');
-                    to.addClass('current fade-in');
-                    viewport.triggerResize();
-                });
+                from.removeClass('current').addClass('fade-out');
+                to.addClass('current');
+                to.addClass('fade-in');
+                viewport.triggerResize();
 
                 setTimeout(() => {
                     from.removeClass('fade-out');
@@ -131,28 +136,27 @@ module typedoc
          * Find all signature/description groups.
          */
         private createGroups() {
-            var $signatures = this.$el.find('> .tsd-signature');
-            if ($signatures.length < 2) return;
+            const signatures = this.el.children;
+            if (signatures.length < 2) return;
 
-            this.$container   = this.$el.siblings('.tsd-descriptions');
-            var $descriptions = this.$container.find('> .tsd-description');
+            this.container = this.el.nextElementSibling as HTMLElement;
+            const descriptions = this.container.children;
 
             this.groups = [];
-            $signatures.each((index, el) => {
-                this.groups.push(new SignatureGroup($(el), $descriptions.eq(index)));
-            });
+            for (let index = 0; index < signatures.length; index++) {
+                this.groups.push(new SignatureGroup(signatures[index], descriptions[index]));
+            }
         }
 
 
         /**
          * Triggered when the user clicks onto a signature header.
          *
-         * @param e  The related jQuery event object.
+         * @param e  The related event object.
          */
-        private onClick(e:JQueryMouseEventObject) {
-            e.preventDefault();
-            _(this.groups).forEach((group, index) => {
-                if (group.$signature.is(e.currentTarget)) {
+        private onClick(e: Event) {
+            this.groups.forEach((group, index) => {
+                if (group.signature === e.currentTarget) {
                     this.setIndex(index);
                 }
             });

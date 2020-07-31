@@ -1,4 +1,6 @@
-module typedoc
+/// <reference path="../Application.ts" />
+
+namespace typedoc
 {
     /**
      * Simple point interface.
@@ -52,7 +54,7 @@ module typedoc
      * Is the user agent a mobile agent?
      */
     export var isMobile:boolean = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    $html.addClass(isMobile ? 'is-mobile' : 'not-mobile');
+    document.documentElement.classList.add(isMobile ? 'is-mobile' : 'not-mobile');
 
 
     if (isMobile && 'ontouchstart' in document.documentElement) {
@@ -62,23 +64,29 @@ module typedoc
         pointerUp   = 'touchend';
     }
 
-    $document.on(pointerDown, (e:JQueryMouseEventObject) => {
+    document.addEventListener(pointerDown, (e) => {
         isPointerDown = true;
         hasPointerMoved = false;
-        var t = (pointerDown == 'touchstart' ? e.originalEvent['targetTouches'][0] : e);
-        pointerDownPosition.x = t.pageX;
-        pointerDownPosition.y = t.pageY;
-    }).on(pointerMove, (e:JQueryMouseEventObject) => {
+        var t = (pointerDown == 'touchstart' ? (e as TouchEvent).targetTouches[0] : (e as MouseEvent));
+        pointerDownPosition.y = t.pageY || 0;
+        pointerDownPosition.x = t.pageX || 0;
+    });
+
+    document.addEventListener(pointerMove, (e) => {
         if (!isPointerDown) return;
         if (!hasPointerMoved) {
-            var t = (pointerDown == 'touchstart' ? e.originalEvent['targetTouches'][0] : e);
-            var x = pointerDownPosition.x - t.pageX;
-            var y = pointerDownPosition.y - t.pageY;
+            var t = (pointerDown == 'touchstart' ? (e as TouchEvent).targetTouches[0] : (e as MouseEvent));
+            var x = pointerDownPosition.x - (t.pageX || 0);
+            var y = pointerDownPosition.y - (t.pageY || 0);
             hasPointerMoved = (Math.sqrt(x*x + y*y) > 10);
         }
-    }).on(pointerUp, (e:JQueryMouseEventObject) => {
+    });
+
+    document.addEventListener(pointerUp, () => {
         isPointerDown = false;
-    }).on('click', (e:JQueryMouseEventObject) => {
+    });
+
+    document.addEventListener('click', (e) => {
         if (preventNextClick) {
             e.preventDefault();
             e.stopImmediatePropagation();

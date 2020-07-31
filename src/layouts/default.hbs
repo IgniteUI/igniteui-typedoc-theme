@@ -6,7 +6,7 @@
     <title>{{#ifCond model.name '==' project.name}}{{project.name}}{{else}}{{model.name}} | {{project.name}}{{/ifCond}}</title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    
+
     {{#ifCond settings.localize '===' 'en'}}
         <link rel="canonical" href="{{getConfigData 'typedoc_default_url' 'en'}}{{url}}" />
     {{else}}
@@ -52,9 +52,9 @@
     <div class="row">
         <div class="col-2 col-menu menu-sticky-wrap menu-highlight">
 
-            <div id="tsd-search" class="tsd-search" data-index="{{relativeURL "assets/js/search.js"}}" data-base="{{relativeURL "./"}}">
+            <div id="tsd-search" class="tsd-search" data-index="{{relativeURL "assets/js/search.json"}}" data-base="{{relativeURL "./"}}">
                 <div class="field">
-                    <label for="tsd-search-field" class="material-icons">search</label>
+                    <label for="tsd-search-field" class="tsd-widget search no-caption" class="material-icons">Search</label>
                     <input id="tsd-search-field" type="text" placeholder="{{#localize}}Search API{{/localize}}" />
                 </div>
 
@@ -137,7 +137,6 @@
 {{> footer}}
 
 <div class="overlay"></div>
-<script>if (location.protocol == 'file:') document.write('<script src="{{relativeURL "assets/js/search.js"}}"><' + '/script>');</script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js"></script>
 <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js" integrity="sha256-8WqyJLuWKRBVhxXIL1jBDD7SDxU936oZkCnxQbWwJVw=" crossorigin="anonymous"></script>
 <script type="text/javascript" src="https://infragistics.com/assets/modern/scripts/jquery-migrate.min.js"></script>

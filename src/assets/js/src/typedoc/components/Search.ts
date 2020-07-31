@@ -1,4 +1,8 @@
-declare module typedoc.search
+/// <reference path='../Component.ts' />
+/// <reference types='lunr' />
+
+
+namespace typedoc.search
 {
     interface IDocument {
         id:number;
@@ -12,14 +16,9 @@ declare module typedoc.search
     interface IData {
         kinds:{[kind:number]:string};
         rows:IDocument[];
+        index:object;
     }
 
-    var data:IData;
-}
-
-
-module typedoc.search
-{
     /**
      * Loading state definitions.
      */
@@ -28,241 +27,314 @@ module typedoc.search
         Idle, Loading, Ready, Failure
     }
 
-
     /**
-     * The element holding the search widget and results.
+     * Provides an indexed search on generated documentation
      */
-    var $el:JQuery = $('#tsd-search');
+    export class Search extends Component {
+        /**
+         * The input field of the search widget.
+         */
+        private field: HTMLInputElement;
 
-    /**
-     * The input field of the search widget.
-     */
-    var $field:JQuery = $('#tsd-search-field');
+        /**
+         * The result list wrapper.
+         */
+        private results: HTMLElement;
 
-    /**
-     * The result list wrapper.
-     */
-    var $results:JQuery = $('.results');
+        /**
+         * The base url that must be prepended to the indexed urls.
+         */
+        private base: string;
 
-    /**
-     * The base url that must be prepended to the indexed urls.
-     */
-    var base:string = $el.attr('data-base') + '/';
+        /**
+         * The current query string.
+         */
+        private query: string = '';
 
-    /**
-     * The current query string.
-     */
-    var query:string = '';
+        /**
+         * The state the search is currently in.
+         */
+        private loadingState: SearchLoadingState = SearchLoadingState.Idle;
 
-    /**
-     * The state the search is currently in.
-     */
-    var loadingState:SearchLoadingState = SearchLoadingState.Idle;
+        /**
+         * Is the input field focused?
+         */
+        private hasFocus: boolean = false;
 
-    /**
-     * Is the input field focused?
-     */
-    var hasFocus:boolean = false;
+        /**
+         * Should the next key press be prevents?
+         */
+        private preventPress: boolean = false;
 
-    /**
-     * Should the next key press be prevents?
-     */
-    var preventPress:boolean = false;
+        /**
+         * The search data
+         */
+        private data: IData | null = null;
 
-    /**
-     * The lunr index used to search the documentation.
-     */
-    var index:lunr.Index;
+        /**
+         * The lunr index used to search the documentation.
+         */
+        private index: lunr.Index | null = null;
 
+        /**
+         * Has a search result been clicked?
+         * Used to stop the results hiding before a user can fully click on a result.
+         */
+        private resultClicked: boolean = false;
 
-    /**
-     * Instantiate the lunr index.
-     */
-    function createIndex() {
-        index = new lunr.Index();
-        index.pipeline.add(
-            lunr.trimmer
-        );
+        constructor(options: IComponentOptions) {
+            super(options);
+            console.log('load search');
+            console.log(options);
 
-        index.field('name', {boost:10});
-        index.field('parent');
-        index.ref('id');
+            const field = document.querySelector<HTMLInputElement>('#tsd-search-field');
+            const results = document.querySelector<HTMLElement>('.results');
 
-        var rows   = data.rows;
-        var pos    = 0;
-        var length = rows.length;
-        function batch() {
-            var cycles = 0;
-            while (cycles++ < 100) {
-                index.add(rows[pos]);
-                if (++pos == length) {
-                    return setLoadingState(SearchLoadingState.Ready);
-                }
+            if (!field || !results) {
+                throw new Error('The input field or the result list wrapper are not found');
             }
-            setTimeout(batch, 10);
+
+            this.field = field;
+            this.results = results;
+
+            this.base = this.el.dataset.base + '/';
+
+            this.bindEvents();
         }
 
-        batch();
-    }
+        /**
+         * Lazy load the search index and parse it.
+         */
+        private loadIndex() {
+            console.log('loading index');
+            console.log(this.el.dataset);
+            if (this.loadingState != SearchLoadingState.Idle || this.data) return;
 
+            setTimeout(() => {
+                if (this.loadingState == SearchLoadingState.Idle) {
+                    this.setLoadingState(SearchLoadingState.Loading);
+                }
+            }, 500);
 
-    /**
-     * Lazy load the search index and parse it.
-     */
-    function loadIndex() {
-        if (loadingState != SearchLoadingState.Idle) return;
-        setTimeout(() => {
-            if (loadingState == SearchLoadingState.Idle) {
-                setLoadingState(SearchLoadingState.Loading);
+            const url = this.el.dataset.index;
+            if (!url) {
+                this.setLoadingState(SearchLoadingState.Failure);
+                return;
             }
-        }, 500);
 
-        if (typeof data != 'undefined') {
-            createIndex();
-        } else {
-            $.get($el.attr('data-index'))
-                .done((source:string) => {
-                    eval(source);
-                    createIndex();
-                }).fail(() => {
-                    setLoadingState(SearchLoadingState.Failure);
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('The search index is missing');
+                    }
+
+                    return response.json();
+                })
+                .then((source: IData) => {
+                    this.data = source;
+                    this.index = lunr.Index.load(source.index);
+
+                    this.setLoadingState(SearchLoadingState.Ready);
+                })
+                .catch((error) => {
+                    console.error(error);
+                    this.setLoadingState(SearchLoadingState.Failure);
                 });
         }
-    }
 
 
-    /**
-     * Update the visible state of the search control.
-     */
-    function updateResults() {
-        if (loadingState != SearchLoadingState.Ready) return;
-        $results.empty();
+        /**
+         * Update the visible state of the search control.
+         */
+        private updateResults() {
+            // Don't clear results, if loading state is not ready,
+            // because loading or error message can be removed.
+            if (this.loadingState != SearchLoadingState.Ready) return;
 
-        var res = index.search(query);
-        for (var i = 0, c = Math.min(10, res.length); i < c; i++) {
-            var row = data.rows[res[i].ref];
-            var name = row.name;
-            if (row.parent) name = '<span class="parent">' + row.parent + '.</span>' + name;
-            $results.append('<li class="' + row.classes + '"><a href="' + base + row.url + '" class="tsd-kind-icon">' + name + '</li>');
-        }
-    }
+            this.results.textContent = '';
+            if (!this.query || !this.index || !this.data) return;
 
+            // Perform a wildcard search
+            var res = this.index.search(`*${this.query}*`);
 
-    /**
-     * Set the loading state and update the visual state accordingly.
-     */
-    function setLoadingState(value:SearchLoadingState) {
-        if (loadingState == value) return;
+            // If still no results, try a fuzzy match search
+            if (res.length === 0) {
+                res = this.index.search(`*${this.query}~1*`);
+            }
 
-        $el.removeClass(SearchLoadingState[loadingState].toLowerCase());
-        loadingState = value;
-        $el.addClass(SearchLoadingState[loadingState].toLowerCase());
+            for (var i = 0, c = Math.min(10, res.length); i < c; i++) {
+                var row = this.data.rows[Number(res[i].ref)];
 
-        if (value == SearchLoadingState.Ready) {
-            updateResults();
-        }
-    }
+                // Bold the matched part of the query in the search results
+                var name = row.name.replace(new RegExp(this.query, 'i'), (match: string) => `<b>${match}</b>`);
+                var parent = row.parent || '';
+                parent = parent.replace(new RegExp(this.query, 'i'), (match: string) => `<b>${match}</b>`);
 
-
-    /**
-     * Set the focus state and update the visual state accordingly.
-     */
-    function setHasFocus(value:boolean) {
-        if (hasFocus == value) return;
-        hasFocus = value;
-        $el.toggleClass('has-focus');
-
-        if (!value) {
-            $field.val(query);
-        } else {
-            setQuery('');
-            $field.val('');
-        }
-    }
-
-
-    /**
-     * Set the query string and update the results.
-     */
-    function setQuery(value:string) {
-        query = $.trim(value);
-        updateResults();
-    }
-
-
-    /**
-     * Move the highlight within the result set.
-     */
-    function setCurrentResult(dir:number) {
-        var $current = $results.find('.current');
-        if ($current.length == 0) {
-            $results.find(dir == 1 ? 'li:first-child' : 'li:last-child').addClass('current');
-        } else {
-            var $rel = dir == 1 ? $current.next('li') : $current.prev('li');
-            if ($rel.length > 0) {
-                $current.removeClass('current');
-                $rel.addClass('current');
+                if (parent) name = '<span class="parent">' + parent + '.</span>' + name;
+                const item = document.createElement('li');
+                item.classList.value = row.classes;
+                item.innerHTML = `
+                    <a href="${this.base + row.url}" class="tsd-kind-icon">${name}</a>
+                `;
+                this.results.appendChild(item);
             }
         }
-    }
 
 
-    /**
-     * Navigate to the highlighted result.
-     */
-    function gotoCurrentResult() {
-        var $current = $results.find('.current');
+        /**
+         * Set the loading state and update the visual state accordingly.
+         */
+        private setLoadingState(value: SearchLoadingState) {
+            if (this.loadingState == value) return;
 
-        if ($current.length == 0) {
-            $current = $results.find('li:first-child');
+            this.el.classList.remove(SearchLoadingState[this.loadingState].toLowerCase());
+            this.loadingState = value;
+            this.el.classList.add(SearchLoadingState[this.loadingState].toLowerCase());
+
+            this.updateResults();
         }
 
-        if ($current.length > 0) {
-            window.location.href = $current.find('a').prop('href');
-            $field.blur();
-        }
-    }
 
+        /**
+         * Set the focus state and update the visual state accordingly.
+         */
+        private setHasFocus(value: boolean) {
+            if (this.hasFocus == value) return;
+            this.hasFocus = value;
+            this.el.classList.toggle('has-focus');
 
-    /**
-     * Bind all required events on the input field.
-     */
-    $field.on('focusin', () => {
-        setHasFocus(true);
-        loadIndex();
-    }).on('focusout', () => {
-        setTimeout(() => setHasFocus(false), 100);
-    }).on('input', () => {
-        setQuery($.trim($field.val()));
-    }).on('keydown', (e:JQueryKeyEventObject) => {
-        if (e.keyCode == 13 || e.keyCode == 27 || e.keyCode == 38 || e.keyCode == 40) {
-            preventPress = true;
-            e.preventDefault();
-
-            if (e.keyCode == 13) {
-                gotoCurrentResult();
-            } else if (e.keyCode == 27) {
-                $field.blur();
-            } else if (e.keyCode == 38) {
-                setCurrentResult(-1);
-            } else if (e.keyCode == 40) {
-                setCurrentResult(1);
+            if (!value) {
+                this.field.value = this.query;
+            } else {
+                this.setQuery('');
+                this.field.value = '';
             }
-        } else {
-            preventPress = false;
         }
-    }).on('keypress', (e) => {
-        if (preventPress) e.preventDefault();
-    });
 
+
+        /**
+         * Set the query string and update the results.
+         */
+        private setQuery(value: string) {
+            this.query = value.trim();
+            this.updateResults();
+        }
+
+
+        /**
+         * Move the highlight within the result set.
+         */
+        private setCurrentResult(dir: number) {
+            var current = this.results.querySelector('.current');
+            if (!current) {
+                current = this.results.querySelector(dir == 1 ? 'li:first-child' : 'li:last-child');
+                if (current) {
+                    current.classList.add('current')
+                }
+            } else {
+                var rel = dir == 1 ? current.nextElementSibling : current.previousElementSibling;
+                if (rel) {
+                    current.classList.remove('current');
+                    rel.classList.add('current');
+                }
+            }
+        }
+
+
+        /**
+         * Navigate to the highlighted result.
+         */
+        private gotoCurrentResult() {
+            var current = this.results.querySelector('.current');
+
+            if (!current) {
+                current = this.results.querySelector('li:first-child');
+            }
+
+            if (current) {
+                const link = current.querySelector('a');
+                if (link) {
+                    window.location.href = link.href;
+                }
+                this.field.blur();
+            }
+        }
+
+        /**
+         * Bind events on result list wrapper, input field and document body.
+         */
+        private bindEvents() {
+            /**
+             * Intercept mousedown and mouseup events so we can correctly
+             * handle clicking on search results.
+             */
+            this.results.addEventListener('mousedown', () => {
+                this.resultClicked = true;
+            });
+            this.results.addEventListener('mouseup', () => {
+                this.resultClicked = false;
+                this.setHasFocus(false);
+            });
+
+
+            /**
+             * Bind all required events on the input field.
+             */
+            this.field.addEventListener('focusin', () => {
+                this.setHasFocus(true);
+                this.loadIndex();
+            });
+            this.field.addEventListener('focusout', () => {
+                // If the user just clicked on a search result, then
+                // don't lose the focus straight away, as this prevents
+                // them from clicking the result and following the link
+                if (this.resultClicked) {
+                    this.resultClicked = false;
+                    return;
+                }
+
+                setTimeout(() => this.setHasFocus(false), 100);
+            });
+            this.field.addEventListener('input', () => {
+                this.setQuery(this.field.value);
+            });
+            this.field.addEventListener('keydown', (e) => {
+                if (e.keyCode == 13 || e.keyCode == 27 || e.keyCode == 38 || e.keyCode == 40) {
+                    this.preventPress = true;
+                    e.preventDefault();
+
+                    if (e.keyCode == 13) {
+                        this.gotoCurrentResult();
+                    } else if (e.keyCode == 27) {
+                        this.field.blur();
+                    } else if (e.keyCode == 38) {
+                        this.setCurrentResult(-1);
+                    } else if (e.keyCode == 40) {
+                        this.setCurrentResult(1);
+                    }
+                } else {
+                    this.preventPress = false;
+                }
+            });
+            this.field.addEventListener('keypress', (e) => {
+                if (this.preventPress) e.preventDefault();
+            });
+
+
+            /**
+             * Start searching by pressing a key on the body.
+             */
+            document.body.addEventListener('keydown', e => {
+                if (e.altKey || e.ctrlKey || e.metaKey) return;
+                if (!this.hasFocus && e.keyCode > 47 && e.keyCode < 112) {
+                    this.field.focus();
+                }
+            });
+        }
+    }
 
     /**
-     * Start searching by pressing a key on the body.
+     * Register this component.
      */
-    $('body').on('keydown', (e:JQueryKeyEventObject) => {
-        if (e.altKey || e.ctrlKey || e.metaKey) return;
-        if (!hasFocus && e.keyCode > 47 && e.keyCode < 112) {
-            $field.focus();
-        }
-    });
+    registerComponent(Search, '#tsd-search');
 }
