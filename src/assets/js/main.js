@@ -324,9 +324,6 @@ var typedoc;
             _this.lastY = 0;
             _this.width = 0;
             _this.height = 0;
-            _this.showToolbar = true;
-            _this.toolbar = document.querySelector('.tsd-page-toolbar');
-            _this.secondaryNav = document.querySelector('.tsd-navigation.secondary');
             window.addEventListener('scroll', typedoc.throttle(function () { return _this.onScroll(); }, 10));
             window.addEventListener('resize', typedoc.throttle(function () { return _this.onResize(); }, 10));
             _this.onResize();
@@ -361,16 +358,6 @@ var typedoc;
                 }
             });
             this.dispatchEvent(event);
-            this.hideShowToolbar();
-        };
-        Viewport.prototype.hideShowToolbar = function () {
-            var isShown = this.showToolbar;
-            this.showToolbar = this.lastY >= this.scrollTop || this.scrollTop === 0;
-            if (isShown !== this.showToolbar) {
-                this.toolbar.classList.toggle('tsd-page-toolbar--hide');
-                this.secondaryNav.classList.toggle('tsd-navigation--toolbar-hide');
-            }
-            this.lastY = this.scrollTop;
         };
         return Viewport;
     }(typedoc.EventTarget));
@@ -478,8 +465,6 @@ var typedoc;
                 _this.data = null;
                 _this.index = null;
                 _this.resultClicked = false;
-                console.log('load search');
-                console.log(options);
                 var field = document.querySelector('#tsd-search-field');
                 var results = document.querySelector('.results');
                 if (!field || !results) {
@@ -493,8 +478,6 @@ var typedoc;
             }
             Search.prototype.loadIndex = function () {
                 var _this = this;
-                console.log('loading index');
-                console.log(this.el.dataset);
                 if (this.loadingState != SearchLoadingState.Idle || this.data)
                     return;
                 setTimeout(function () {
@@ -507,7 +490,9 @@ var typedoc;
                     this.setLoadingState(SearchLoadingState.Failure);
                     return;
                 }
-                fetch(url)
+                fetch(url, {
+                    mode: 'no-cors'
+                })
                     .then(function (response) {
                     if (!response.ok) {
                         throw new Error('The search index is missing');

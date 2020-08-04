@@ -51,18 +51,17 @@
 <div class="container container-main">
     <div class="row">
         <div class="col-2 col-menu menu-sticky-wrap menu-highlight">
-
             <div id="tsd-search" class="tsd-search" data-index="{{relativeURL "assets/js/search.json"}}" data-base="{{relativeURL "./"}}">
-                <div class="field">
-                    <label for="tsd-search-field" class="tsd-widget search no-caption" class="material-icons">Search</label>
-                    <input id="tsd-search-field" type="text" placeholder="{{#localize}}Search API{{/localize}}" />
-                </div>
+                    <div class="field">
+                        <label for="tsd-search-field" class="material-icons">search</label>
+                        <input id="tsd-search-field" type="text" placeholder="{{#localize}}Search API{{/localize}}" />
+                    </div>
 
-                <ul class="results">
-                    <li class="state loading">Preparing search index...</li>
-                    <li class="state failure">The search index is not available</li>
-                </ul>
-            </div>
+                    <ul class="results">
+                        <li class="state loading">Preparing search index...</li>
+                        <li class="state failure">The search index is not available</li>
+                    </ul>
+                </div>
 
             <div id="tsd-filter">
                 <div class="tsd-filter-group">
@@ -142,6 +141,7 @@
 <script type="text/javascript" src="https://infragistics.com/assets/modern/scripts/jquery-migrate.min.js"></script>
 <script type="text/javascript" src="{{getConfigData 'url' 'en'}}/assets/modern/scripts/plugins.nav.js"></script>
 <script type="text/javascript" src="{{getConfigData 'url' 'en'}}/assets/modern/scripts/navigation.js"></script>
+<script src="https://unpkg.com/lunr/lunr.js"></script>
 <script src="{{relativeURL "assets/js/main.js"}}"></script>
 {{> analytics}}
 

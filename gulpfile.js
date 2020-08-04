@@ -83,7 +83,6 @@ const typedocMinifyJS = (cb) => {
     slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'lib', 'jquery-2.1.1.min.js')),
     slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'lib', 'underscore-1.6.0.min.js')),
     slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'lib', 'backbone-1.1.2.min.js')),
-    slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'lib', 'lunr.min.js')),
     slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'src', 'navigation/igviewer.common.js')),
     slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'src', 'navigation/igviewer.renderingService.js')),
     slash(path.join(TYPEDOC_THEME.SRC, 'assets','js', 'src', 'navigation/nav-initializer.js')),

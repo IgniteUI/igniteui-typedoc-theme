@@ -84,9 +84,6 @@ namespace typedoc.search
 
         constructor(options: IComponentOptions) {
             super(options);
-            console.log('load search');
-            console.log(options);
-
             const field = document.querySelector<HTMLInputElement>('#tsd-search-field');
             const results = document.querySelector<HTMLElement>('.results');
 
@@ -106,8 +103,6 @@ namespace typedoc.search
          * Lazy load the search index and parse it.
          */
         private loadIndex() {
-            console.log('loading index');
-            console.log(this.el.dataset);
             if (this.loadingState != SearchLoadingState.Idle || this.data) return;
 
             setTimeout(() => {
@@ -122,7 +117,9 @@ namespace typedoc.search
                 return;
             }
 
-            fetch(url)
+            fetch(url, {
+              mode: 'no-cors'
+            })
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('The search index is missing');
