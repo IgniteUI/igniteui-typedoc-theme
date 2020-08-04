@@ -490,9 +490,7 @@ var typedoc;
                     this.setLoadingState(SearchLoadingState.Failure);
                     return;
                 }
-                fetch(url, {
-                    mode: 'no-cors'
-                })
+                fetch(url)
                     .then(function (response) {
                     if (!response.ok) {
                         throw new Error('The search index is missing');

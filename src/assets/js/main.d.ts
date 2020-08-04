@@ -65,14 +65,10 @@ declare namespace typedoc {
         lastY: number;
         width: number;
         height: number;
-        toolbar: HTMLDivElement;
-        showToolbar: boolean;
-        secondaryNav: HTMLElement;
         constructor();
         triggerResize(): void;
         onResize(): void;
         onScroll(): void;
-        hideShowToolbar(): void;
     }
     var viewport: Viewport;
 }

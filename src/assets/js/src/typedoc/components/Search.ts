@@ -117,9 +117,7 @@ namespace typedoc.search
                 return;
             }
 
-            fetch(url, {
-              mode: 'no-cors'
-            })
+            fetch(url)
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('The search index is missing');
