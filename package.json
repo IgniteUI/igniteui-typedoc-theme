@@ -1,7 +1,7 @@
 {
   "name": "ig-typedoc-theme",
   "version": "1.0.0",
-  "description": "infragistics theme for typdoc API documentation",
+  "description": "infragistics theme for typedoc API documentation",
   "author": "Infragistics",
   "license": "MIT",
   "files": [
