@@ -14,14 +14,9 @@ export function getConfigData(prop: string, lang) {
     const settingOpt = this.settings && this.settings.localize ? this.settings.localize : 'en';
     const extractedLang = lang.name ? settingOpt : lang;
 
-    // console.log('config: ', config);
-    // console.log('extractedLang: ', extractedLang);
-    console.log('process.env.NODE_ENV: ', process.env.NODE_ENV);
     if (config && extractedLang && process.env.NODE_ENV) {
         data = config[extractedLang][process.env.NODE_ENV.trim()];
     }
 
-    const res = data ? data[prop] : ''; 
-    // console.log('data[prop]', res);
-    return res;
+    return data ? data[prop] : '';
 }
