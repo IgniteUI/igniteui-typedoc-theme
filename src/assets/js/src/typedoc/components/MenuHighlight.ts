@@ -1,141 +1,141 @@
-module typedoc
-{
+import { Component, IComponentOptions } from "../Component";
+import { Viewport } from "../services/Viewport";
+
+/**
+ * Stored element and position data of a single anchor.
+ */
+interface IAnchorInfo {
     /**
-     * Stored element and position data of a single anchor.
+     * The anchor element.
      */
-    interface IAnchorInfo
-    {
-        /**
-         * jQuery instance of the anchor tag.
-         */
-        $anchor?:JQuery;
+    anchor: HTMLElement;
 
-        /**
-         * jQuery instance of the link in the navigation representing this anchor.
-         */
-        $link?:JQuery;
+    /**
+     * The link element in the navigation representing this anchor.
+     */
+    link: HTMLElement;
 
-        /**
-         * The vertical offset of the anchor on the page.
-         */
-        position:number;
+    /**
+     * The vertical offset of the anchor on the page.
+     */
+    position: number;
+}
+
+/**
+ * Manages the sticky state of the navigation and moves the highlight
+ * to the current navigation item.
+ */
+export class MenuHighlight extends Component {
+    /**
+     * List of all discovered anchors.
+     */
+    private anchors: IAnchorInfo[] = [];
+
+    /**
+     * Index of the currently highlighted anchor.
+     */
+    private index: number = -1;
+
+    /**
+     * Create a new MenuHighlight instance.
+     *
+     * @param options  Backbone view constructor options.
+     */
+    constructor(options: IComponentOptions) {
+        super(options);
+
+        Viewport.instance.addEventListener("resize", () => this.onResize());
+        Viewport.instance.addEventListener<{ scrollTop: number }>(
+            "scroll",
+            (e) => this.onScroll(e)
+        );
+
+        this.createAnchors();
     }
 
-
     /**
-     * Manages the sticky state of the navigation and moves the highlight
-     * to the current navigation item.
+     * Find all anchors on the current page.
      */
-    export class MenuHighlight extends Backbone.View<any>
-    {
-        /**
-         * List of all discovered anchors.
-         */
-        private anchors:IAnchorInfo[];
-
-        /**
-         * Index of the currently highlighted anchor.
-         */
-        private index:number = 0;
-
-
-        /**
-         * Create a new MenuHighlight instance.
-         *
-         * @param options  Backbone view constructor options.
-         */
-        constructor(options:Backbone.ViewOptions<any>) {
-            super(options);
-
-            this.listenTo(viewport, 'resize', this.onResize);
-            this.listenTo(viewport, 'scroll', this.onScroll);
-
-            this.createAnchors();
+    private createAnchors() {
+        let base = window.location.href;
+        if (base.indexOf("#") != -1) {
+            base = base.substr(0, base.indexOf("#"));
         }
 
+        this.el.querySelectorAll("a").forEach((el) => {
+            const href = el.href;
+            if (href.indexOf("#") == -1) return;
+            if (href.substr(0, base.length) != base) return;
 
-        /**
-         * Find all anchors on the current page.
-         */
-        private createAnchors() {
-            this.index = 0;
-            this.anchors = [{
-                position: 0
-            }];
+            const hash = href.substr(href.indexOf("#") + 1);
+            const anchor = document.querySelector<HTMLElement>(
+                "a.tsd-anchor[name=" + hash + "]"
+            );
+            const link = el.parentNode;
+            if (!anchor || !link) return;
 
-            var base = window.location.href;
-            if (base.indexOf('#') != -1) {
-                base = base.substr(0, base.indexOf('#'));
-            }
-
-            this.$el.find('a').each((index, el:HTMLAnchorElement) => {
-                var href = el.href;
-                if (href.indexOf('#') == -1) return;
-                if (href.substr(0, base.length) != base) return;
-
-                var hash = href.substr(href.indexOf('#') + 1);
-                var $anchor = $('a.tsd-anchor[name=' + hash + ']');
-                if ($anchor.length == 0) return;
-
-                this.anchors.push({
-                    $link:    $(el.parentNode),
-                    $anchor:  $anchor,
-                    position: 0
-                });
+            this.anchors.push({
+                link: link as HTMLElement,
+                anchor: anchor,
+                position: 0,
             });
+        });
 
-            this.onResize();
-        }
-
-
-        /**
-         * Triggered after the viewport was resized.
-         */
-        private onResize() {
-            var anchor;
-            for (var index = 1, count = this.anchors.length; index < count; index++) {
-                anchor = this.anchors[index];
-                anchor.position = anchor.$anchor.offset().top;
-            }
-
-            this.anchors.sort((a, b) => {
-                return a.position - b.position;
-            });
-
-            this.onScroll(viewport.scrollTop);
-        }
-
-
-        /**
-         * Triggered after the viewport was scrolled.
-         *
-         * @param scrollTop  The current vertical scroll position.
-         */
-        private onScroll(scrollTop:number) {
-            var anchors  = this.anchors;
-            var index    = this.index;
-            var count    = anchors.length - 1;
-
-            scrollTop += 5;
-            while (index > 0 && anchors[index].position > scrollTop) {
-                index -= 1;
-            }
-
-            while (index < count && anchors[index + 1].position < scrollTop) {
-                index += 1;
-            }
-
-            if (this.index != index) {
-                if (this.index > 0) this.anchors[this.index].$link.removeClass('focus');
-                this.index = index;
-                if (this.index > 0) this.anchors[this.index].$link.addClass('focus');
-            }
-        }
+        this.onResize();
     }
 
+    /**
+     * Triggered after the viewport was resized.
+     */
+    private onResize() {
+        let anchor: IAnchorInfo;
+        for (
+            let index = 0, count = this.anchors.length;
+            index < count;
+            index++
+        ) {
+            anchor = this.anchors[index];
+            const rect = anchor.anchor.getBoundingClientRect();
+            anchor.position = rect.top + document.body.scrollTop;
+        }
+
+        this.anchors.sort((a, b) => {
+            return a.position - b.position;
+        });
+
+        const event = new CustomEvent("scroll", {
+            detail: {
+                scrollTop: Viewport.instance.scrollTop,
+            },
+        });
+        this.onScroll(event);
+    }
 
     /**
-     * Register this component.
+     * Triggered after the viewport was scrolled.
+     *
+     * @param event  The custom event with the current vertical scroll position.
      */
-    registerComponent(MenuHighlight, '.menu-highlight');
+    private onScroll(event: CustomEvent<{ scrollTop: number }>) {
+        const scrollTop = event.detail.scrollTop + 5;
+        const anchors = this.anchors;
+        const count = anchors.length - 1;
+        let index = this.index;
+
+        while (index > -1 && anchors[index].position > scrollTop) {
+            index -= 1;
+        }
+
+        while (index < count && anchors[index + 1].position < scrollTop) {
+            index += 1;
+        }
+
+        if (this.index != index) {
+            if (this.index > -1)
+                this.anchors[this.index].link.classList.remove("focus");
+            this.index = index;
+            if (this.index > -1)
+                this.anchors[this.index].link.classList.add("focus");
+        }
+    }
 }

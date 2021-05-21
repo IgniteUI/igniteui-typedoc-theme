@@ -1,53 +1,39 @@
-import { IComponentOptions } from "./Component";
-
-/**
- * Component definition.
- */
-export interface IComponent {
-    constructor: new (options: IComponentOptions) => unknown;
-    selector: string;
-}
-
 /**
  * List of all known components.
  */
-const components: IComponent[] = [];
-
+var components = [];
 /**
  * Register a new component.
  */
-export function registerComponent(
-    constructor: IComponent["constructor"],
-    selector: string
-) {
+export function registerComponent(constructor, selector) {
     components.push({
         selector: selector,
         constructor: constructor,
     });
 }
-
 /**
  * TypeDoc application class.
  */
-export class Application {
+var Application = /** @class */ (function () {
     /**
      * Create a new Application instance.
      */
-    constructor() {
+    function Application() {
         this.createComponents(document.body);
     }
-
     /**
      * Create all components beneath the given jQuery element.
      */
-    public createComponents(context: HTMLElement) {
-        components.forEach((c) => {
-            context.querySelectorAll<HTMLElement>(c.selector).forEach((el) => {
+    Application.prototype.createComponents = function (context) {
+        components.forEach(function (c) {
+            context.querySelectorAll(c.selector).forEach(function (el) {
                 if (!el.dataset.hasInstance) {
                     new c.constructor({ el: el });
                     el.dataset.hasInstance = String(true);
                 }
             });
         });
-    }
-}
+    };
+    return Application;
+}());
+export { Application };
