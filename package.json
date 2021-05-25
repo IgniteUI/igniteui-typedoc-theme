@@ -9,11 +9,11 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "webpack --mode=production --node-env=production",
-    "build:dev": "webpack --mode=development",
-    "build:prod": "webpack --mode=production --node-env=production",
-    "watch": "webpack --watch",
-    "serve": "webpack serve"
+    "build": "webpack --mode=production --node-env=production && gulp typedoc:copy-styles",
+    "build:dev": "webpack --mode=development && gulp typedoc:copy-styles",
+    "build:prod": "webpack --mode=production --node-env=production && gulp typedoc:copy-styles",
+    "watch": "webpack --watch && gulp typedoc:copy-styles",
+    "serve": "webpack serve && gulp typedoc:copy-styles"
   },
   "keywords": [
     "typedoc",
@@ -44,6 +44,12 @@
     "url-loader": "^4.1.1",
     "webpack": "^5.11.1",
     "webpack-cli": "^4.3.0",
-    "webpack-merge": "^5.7.3"
+    "webpack-merge": "^5.7.3",
+    "gulp": "^4.0.2",
+    "gulp-postcss": "^8.0.0",
+    "gulp-sass": "^4.0.2",
+    "gulp-sourcemaps": "^2.6.5",
+    "gulp-typescript": "^5.0.1",
+    "autoprefixer": "^9.8.6"
   }
 }
