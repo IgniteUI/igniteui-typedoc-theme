@@ -1,29 +1,29 @@
-const path = require("path");
-const { CleanWebpackPlugin } = require("clean-webpack-plugin");
-const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-const CopyPlugin = require("copy-webpack-plugin");
+  const path = require("path");
+  const { CleanWebpackPlugin } = require("clean-webpack-plugin");
+  const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+  const CopyPlugin = require("copy-webpack-plugin");
 
-const config = {
-    context: path.resolve(__dirname, "src"),
+  const config = {
+      context: path.resolve(__dirname, "src"),
 
-    entry: "./assets/js/src/bootstrap.ts",
+      entry: "./assets/js/src/bootstrap.ts",
 
-    resolve: {
-        extensions: [".tsx", ".ts", ".js"],
-    },
-    
-    output: {
-      path: path.resolve(__dirname, "dist"),
-      filename: "assets/js/main.js",
-    },
-    module: {
-      rules: [
-        {
-            test: /\.ts$/,
-            loader: "ts-loader",
-            exclude: /node_modules/,
-        },
-        {
+      resolve: {
+          extensions: [".tsx", ".ts", ".js"],
+      },
+      
+      output: {
+        path: path.resolve(__dirname, "dist"),
+        filename: "assets/js/main.js",
+      },
+      module: {
+        rules: [
+          {
+              test: /\.ts$/,
+              loader: "ts-loader",
+              exclude: /node_modules/,
+          },
+          {
             test: /\.sass$/,
             use: [
                 {
@@ -31,9 +31,15 @@ const config = {
                 },
                 {
                     loader: "css-loader",
+                    options: {
+                        sourceMap: true
+                      }
                 },
                 {
                     loader: "resolve-url-loader",
+                    options: {
+                        sourceMap: true
+                    }
                 },
                 {
                     loader: "sass-loader",
@@ -46,35 +52,35 @@ const config = {
                     },
                 },
             ],
-        },
-        { test: /\.svg$/, use: 'raw-loader' },
-        {
-            test: /\.png$/,
-            loader: "file-loader",
-            options: {
-                outputPath: "assets/images",
-                publicPath: "../images",
-                name: "[name].[ext]",
-            },
-        },
+          },
+          { test: /\.svg$/, use: 'raw-loader' },
+          {
+              test: /\.png$/,
+              loader: "file-loader",
+              options: {
+                  outputPath: "assets/images",
+                  publicPath: "../images",
+                  name: "[name].[ext]",
+              },
+          },
+        ],
+      },
+
+      plugins: [
+          new CleanWebpackPlugin(),
+          new MiniCssExtractPlugin({
+            filename: "assets/css/main.css",
+          }),
+          new CopyPlugin({
+              patterns: [
+                  {
+                      context: path.resolve(__dirname, "src"),
+                      from: "**/*.hbs",
+                      to: path.resolve(__dirname, "dist"),
+                  },
+              ],
+          }),
       ],
-    },
+  };
 
-    plugins: [
-        new CleanWebpackPlugin(),
-        new MiniCssExtractPlugin({
-          filename: "assets/css/main.css",
-        }),
-        new CopyPlugin({
-            patterns: [
-                {
-                    context: path.resolve(__dirname, "src"),
-                    from: "**/*.hbs",
-                    to: path.resolve(__dirname, "dist"),
-                },
-            ],
-        }),
-    ],
-};
-
-module.exports = config;
+  module.exports = config;

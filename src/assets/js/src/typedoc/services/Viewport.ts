@@ -112,19 +112,5 @@ export class Viewport extends EventTarget {
         });
 
         this.dispatchEvent(event);
-        this.hideShowToolbar();
-    }
-
-    /**
-     * Handle hiding/showing of the toolbar.
-     */
-    hideShowToolbar() {
-        const isShown = this.showToolbar;
-        this.showToolbar = this.lastY >= this.scrollTop || this.scrollTop <= 0;
-        if (isShown !== this.showToolbar) {
-            this.toolbar.classList.toggle("tsd-page-toolbar--hide");
-            this.secondaryNav.classList.toggle("tsd-navigation--toolbar-hide");
-        }
-        this.lastY = this.scrollTop;
     }
 }
