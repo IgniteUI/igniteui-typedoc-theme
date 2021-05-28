@@ -1,19 +1,14 @@
 {
-    "compileOnSave": false,
+    "include": ["src/assets/js/src/**/*.ts"],
     "compilerOptions": {
-        "target": "es5",
-        "module": "amd",
+        "target": "ES5",
+        "module": "ES2015",
+        "lib": ["ES2016", "DOM", "DOM.Iterable"],
+        "declaration": false,
+        "skipLibCheck": true,
         "sourceMap": false,
-        "declaration": true,
-        "removeComments": true,
-        "outFile": "src/assets/js/main.js"
-    },
-    "include": [
-        "src/assets/js/src/lib/**/*.ts",
-        "src/assets/js/src/typedoc/Application.ts",
-        "src/assets/js/src/typedoc/components/**/*.ts",
-        "src/assets/js/src/typedoc/services/**/*.ts",
-        "src/assets/js/src/typedoc/utils/**/*.ts",
-        "src/assets/js/src/~bootstrap.ts"
-    ]
+        "strict": true,
+        "alwaysStrict": false,
+        "noImplicitUseStrict": true
+    }
 }
