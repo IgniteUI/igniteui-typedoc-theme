@@ -1,14 +1,21 @@
 {
-    "include": ["src/assets/js/src/**/*.ts"],
+    "include": ["src"],
+
     "compilerOptions": {
-        "target": "ES5",
-        "module": "ES2015",
-        "lib": ["ES2016", "DOM", "DOM.Iterable"],
-        "declaration": false,
+        "target": "es2018",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "forceConsistentCasingInFileNames": true,
         "skipLibCheck": true,
-        "sourceMap": false,
         "strict": true,
-        "alwaysStrict": false,
-        "noImplicitUseStrict": true
-    }
+        "outDir": "dist",
+        "esModuleInterop": true,
+
+        "jsx": "react",
+        "jsxFactory": "JSX.createElement",
+        "jsxFragmentFactory": "JSX.Fragment"
+    },
+    "exclude": [
+        "src/assets"
+    ]
 }
