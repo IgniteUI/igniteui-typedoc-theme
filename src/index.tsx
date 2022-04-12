@@ -28,7 +28,7 @@ export class IgTheme extends DefaultTheme {
             await copy(
               path.join(
                 process.cwd(),
-                '/node_modules/ig-typedoc-theme/dist/assets',
+                '/node_modules/igniteui-typedoc-theme/dist/assets',
               ),
               path.join(out, '/assets'),
             );

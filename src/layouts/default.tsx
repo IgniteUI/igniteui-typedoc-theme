@@ -29,7 +29,6 @@ export const defaultLayout = (context: DefaultThemeRenderContext, props: PageEve
                 <link rel="stylesheet" href="https://infragistics.com/css/footer.css" />
                 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
                 <link rel="stylesheet" href="https://use.typekit.net/zhy2hpz.css" />
-                <link rel="stylesheet" href={context.relativeURL("assets/css/main.css")} />
 
                 <script async src={context.relativeURL("assets/search.js")} id="search-script"></script>
 
