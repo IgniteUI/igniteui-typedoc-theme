@@ -6,10 +6,7 @@ import { navigation } from "../partials/navigation";
 import { getConfigData, hasTypeParameters, join } from "../utils/lib";
 
 export const defaultLayout = (context: DefaultThemeRenderContext, props: PageEvent<Reflection>) => {
-    const defaultEnUrl = getConfigData(context, 'typedoc_default_url', 'en');
-    const baseUrl = getConfigData(context, 'url');
-    const apiJsonFile = getConfigData(context, 'versions');
-    const searchPath = getConfigData(context, 'assets/js/search.json');
+    const searchPath = context.relativeURL("assets/js/search.json");
     const gaID = getConfigData(context, 'gaID');
     return (
         <html class="default no-js" lang="en">
@@ -25,11 +22,6 @@ export const defaultLayout = (context: DefaultThemeRenderContext, props: PageEve
                 <meta name="description" />
                 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-                <link rel="canonical" href={defaultEnUrl} />
-                <link rel="alternate" href={defaultEnUrl} hreflang="en" />
-                <link rel="alternate" href={defaultEnUrl} hreflang="en-us" />
-                <link rel="alternate" href={defaultEnUrl} hreflang="x-default" />
-
                 <link rel="stylesheet" href="https://infragistics.com/assets/modern/css/layout.css" />
                 <link rel="stylesheet" href="https://infragistics.com/assets/modern/css/animate-custom.css" />
                 <link rel="stylesheet" href="https://infragistics.com/assets/modern/css/fontello.css" />
@@ -44,7 +36,7 @@ export const defaultLayout = (context: DefaultThemeRenderContext, props: PageEve
                 {analytics(context)}
                 {context.hook("head.end")}
             </head>
-            <body id="body" data-base-url={baseUrl} data-api-versions-json={apiJsonFile}>
+            <body id="body">
                 {context.hook('body.begin')}
                 {/* Google Tag Manager (noscript) */}
                 <noscript>

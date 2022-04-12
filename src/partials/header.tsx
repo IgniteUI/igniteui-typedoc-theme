@@ -9,9 +9,6 @@ export const header = (context: DefaultThemeRenderContext, props: PageEvent<Refl
                 <div class="tsd-header-group">
                     <h1 class="tsd-header-logo">
                         <a href="https://www.infragistics.com/products/ignite-ui-angular" class="title">{props.project.name}</a> 
-                        <span class="version">
-                            <select id="versions"></select>
-                        </span>
                     </h1>
                     <div class="tsd-nav-toggle">
                         <input id="tsd-toggle-cbx" type="checkbox" />

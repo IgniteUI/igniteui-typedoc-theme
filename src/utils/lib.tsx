@@ -93,17 +93,16 @@ export function stringify(data: unknown) {
     return JSON.stringify(data);
 }
 
-export function getConfigData(context: DefaultThemeRenderContext, prop: string, lang?: string): string {
+export function getConfigData(context: DefaultThemeRenderContext, prop: string): string {
     const fileName = 'config.json';
 
     const normalizedPath = path.join(__dirname, '..' , fileName);
     const config = JSON.parse(fs.readFileSync(normalizedPath, 'utf8'));
-    const settingOpt =  context.options.getValue('localize') as string;
-    const getLang = lang ? lang : settingOpt;
+    const lang = 'en';
 
     let data;
-    if (config && getLang && process.env.NODE_ENV) {
-        data = config[getLang][process.env.NODE_ENV.trim()];
+    if (config && lang && process.env.NODE_ENV) {
+        data = config[lang][process.env.NODE_ENV.trim()];
     }
 
     const res = data ? data[prop] : '';
