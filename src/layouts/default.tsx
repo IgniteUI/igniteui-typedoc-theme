@@ -118,7 +118,6 @@ export const defaultLayout = (context: DefaultThemeRenderContext, props: PageEve
                 <script type="text/javascript" src="https://www.infragistics.com/assets/modern/scripts/plugins.nav.js"></script>
                 <script type="text/javascript" src="https://www.infragistics.com/assets/modern/scripts/navigation.js"></script>
                 <script src="https://unpkg.com/lunr/lunr.js"></script>
-                <script src={context.relativeURL("assets/main.js")}></script>
 
                 {context.hook("body.end")}
             </body>

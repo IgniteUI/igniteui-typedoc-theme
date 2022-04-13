@@ -16,6 +16,9 @@ const config = {
     context: path.resolve(__dirname, "src"),
 
     entry: [
+        "./assets/js/src/navigation/igviewer.renderingService.js",
+        "./assets/js/src/navigation/igviewer.common.js",
+        "./assets/js/src/navigation/nav-initializer.js",
         "./assets/js/src/bootstrap.ts",
     ],
 
