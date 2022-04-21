@@ -3,11 +3,17 @@ import { copy } from "fs-extra";
 
 import { Application, DefaultTheme, DefaultThemeRenderContext, JSX, Options, PageEvent, Reflection, Renderer, RendererEvent } from "typedoc";
 import { defaultLayout } from "./layouts/default";
+import { breadcrumb } from './partials/breadcrumb';
+
+function bind<F, L extends any[], R>(fn: (f: F, ...a: L) => R, first: F) {
+    return (...r: L) => fn(first, ...r);
+}
 
 export class IgThemeRenderContext extends DefaultThemeRenderContext {
     constructor(theme: DefaultTheme, options: Options) {
         super(theme, options);
 
+        this.breadcrumb = bind(breadcrumb, this);
         this.defaultLayout = (props: PageEvent<Reflection>) => {
             return (
                 defaultLayout(this, props)
